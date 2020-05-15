@@ -1,0 +1,26 @@
+{
+  "name": "signaling-server",
+  "version": "1.0.0",
+  "description": "A signaling server made by socket-io",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "prettier": "node ./scripts/prettier.js"
+  },
+  "keywords": [
+    "webrtc",
+    "signaling",
+    "socket-io"
+  ],
+  "author": "Qifan YANG",
+  "license": "Apache License 2.0",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "socket.io": "^2.3.0"
+  },
+  "devDependencies": {
+    "glob-gitignore": "^1.0.14",
+    "prettier": "^2.0.5"
+  }
+}
