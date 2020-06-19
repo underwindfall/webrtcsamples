@@ -1,0 +1,26 @@
+{
+  "name": "web-client-webrtc-sample",
+  "version": "1.0.0",
+  "description": "This is an example to display basic usage to use webrtc in web",
+  "scripts": {
+    "prettier": "node ./scripts/prettier.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/underwindfall/webrtcsamples.git"
+  },
+  "keywords": [
+    "webrtc",
+    "socket.io"
+  ],
+  "author": "Qifan YANG",
+  "license": "Apache License 2.0",
+  "bugs": {
+    "url": "https://github.com/underwindfall/webrtcsamples/issues"
+  },
+  "homepage": "https://github.com/underwindfall/webrtcsamples#readme",
+  "devDependencies": {
+    "glob-gitignore": "^1.0.14",
+    "prettier": "^2.0.5"
+  }
+}

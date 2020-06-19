@@ -4,8 +4,7 @@
   "description": "A signaling server made by socket-io",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "prettier": "node ./scripts/prettier.js"
+    "start": "node server.js"
   },
   "keywords": [
     "webrtc",
@@ -18,9 +17,5 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "socket.io": "^2.3.0"
-  },
-  "devDependencies": {
-    "glob-gitignore": "^1.0.14",
-    "prettier": "^2.0.5"
   }
 }
