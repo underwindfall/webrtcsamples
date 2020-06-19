@@ -5,11 +5,17 @@ const express = require('express');
 const cors = require('cors');
 const socketIO = require('socket.io');
 const server = express().use(cors());
-let roomId = '';
+const ifaces = require('os').networkInterfaces();
+
+let roomId = ""
+
+const getLocalExternalIP = () => [].concat(...Object.values(ifaces))
+    .find((details) => details.family === 'IPv4' && !details.internal)
+    .address
 
 const app = server
     .listen(port, function () {
-        console.log(`Server listening on port ${port}!`);
+        console.log(`Server listening on ip : ${getLocalExternalIP()} port ${port}!`);
     })
     .on('error', function (error) {
         if (error.code === 'EADDRINUSE') {
@@ -28,7 +34,7 @@ io.on('connection', function (socket) {
         let array = ['Message from server:'];
         array.push.apply(array, arguments);
         socket.emit('log', array);
-        console.log('Server log', array);
+        console.log("Server log", array);
     }
 
     socket.on('message', function (message) {
@@ -57,6 +63,7 @@ io.on('connection', function (socket) {
         }
     });
 
+
     socket.on('ipaddr', function () {
         const ifaces = os.networkInterfaces();
         for (let dev in ifaces) {
@@ -69,8 +76,8 @@ io.on('connection', function (socket) {
     });
 
     socket.on('leave', function () {
-        log(`Client ${socket.id} want to leave room ${roomId}`);
-        socket.leave(roomId);
-        io.in(roomId).emit('close', roomId);
+        log(`Client ${socket.id} want to leave room ${roomId}`)
+        socket.leave(roomId)
+        io.in(roomId).emit('close', roomId)
     });
 });
