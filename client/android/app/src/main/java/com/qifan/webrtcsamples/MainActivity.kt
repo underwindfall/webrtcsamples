@@ -16,12 +16,29 @@
 package com.qifan.webrtcsamples
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.qifan.webrtcsamples.WebRtcActivity.Companion.startWebRtcActivity
+import com.qifan.webrtcsamples.databinding.ActivityMainBinding
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
+
+        binding.btnConfirm.setOnClickListener {
+            val roomId = edit_room_id.text
+            val ip = edit_ip_addr.text
+            if (!ip.isNullOrEmpty() && !roomId.isNullOrEmpty()) {
+                startWebRtcActivity(roomId = roomId.toString(), ipAddr = ip.toString())
+            } else {
+                Toast.makeText(this, R.string.input_parameter_warning, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 }

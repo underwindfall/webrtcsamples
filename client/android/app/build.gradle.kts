@@ -1,9 +1,7 @@
-import org.gradle.internal.impldep.org.eclipse.jgit.util.RawCharUtil.trimTrailingWhitespace
-
 plugins {
     id("com.android.application")
-    kotlin("android")
     kotlin("android.extensions")
+    id("kotlin-android")
 }
 
 android {
@@ -36,6 +34,9 @@ android {
         options.jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
+    buildFeatures {
+        viewBinding = true
+    }
 }
 
 dependencies {

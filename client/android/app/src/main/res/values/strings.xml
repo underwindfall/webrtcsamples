@@ -1,3 +1,10 @@
 <resources>
-	<string name="app_name">webrtcsamples</string>
+    <string name="app_name">webrtcsamples</string>
+    <string name="server_ip_addr_hint">Input your local ip address</string>
+    <string name="room_id_hint">Input your room ID</string>
+    <string name="confirm">Confirm</string>
+    <string name="input_parameter_warning">To make call we need to your local ip address and roomId you want to enter in</string>
+    <string name="remote_btn_mute">Mute</string>
+    <string name="remote_btn_un_mute">UnMute</string>
+    <string name="remote_btn_hangup">Hang Up</string>
 </resources>
