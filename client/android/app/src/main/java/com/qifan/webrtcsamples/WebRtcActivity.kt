@@ -26,6 +26,20 @@ class WebRtcActivity : AppCompatActivity() {
     private lateinit var roomId: String
     private lateinit var ipAddr: String
 
+    companion object {
+        private const val ROOM = "ROOM"
+        private const val IPADDRESS = "IPADDRESS"
+
+        @JvmStatic
+        fun Activity.startWebRtcActivity(roomId: String, ipAddr: String) {
+            startActivity(
+                Intent(this, WebRtcActivity::class.java)
+                    .putExtra(ROOM, roomId)
+                    .putExtra(IPADDRESS, ipAddr)
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         webRtcBinding = ActivityWebRtcBinding.inflate(layoutInflater)
@@ -44,19 +58,5 @@ class WebRtcActivity : AppCompatActivity() {
     }
 
     private fun initializeWebRtc() {
-    }
-
-    companion object {
-        private const val ROOM = "ROOM"
-        private const val IPADDRESS = "IPADDRESS"
-
-        @JvmStatic
-        fun Activity.startWebRtcActivity(roomId: String, ipAddr: String) {
-            startActivity(
-                Intent(this, WebRtcActivity::class.java)
-                    .putExtra(ROOM, roomId)
-                    .putExtra(IPADDRESS, ipAddr)
-            )
-        }
     }
 }
