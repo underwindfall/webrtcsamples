@@ -1,14 +1,13 @@
 plugins {
-    id("com.android.application")
+    id("com.android.library")
+    kotlin("android")
     kotlin("android.extensions")
-    id("kotlin-android")
 }
 
 android {
     compileSdkVersion(BuildVersions.compileSdkVersion)
 
     defaultConfig {
-        applicationId = "com.qifan.webrtcsamples"
         minSdkVersion(BuildVersions.minSdkVersion)
         targetSdkVersion(BuildVersions.targetSdkVersion)
         versionCode = BuildVersions.versionCode
@@ -16,6 +15,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
 
     buildTypes {
         getByName("release") {
@@ -33,21 +33,14 @@ android {
         val options = this as org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
         options.jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
-
-    buildFeatures {
-        viewBinding = true
-    }
 }
 
 dependencies {
-    implementation(project(":webrtc"))
-    implementation(Deps.kotlinLibrary)
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation(Deps.appcompat)
     implementation(Deps.coreKtx)
     implementation(Deps.constraintLayout)
-    implementation(Deps.socketIO) {
-        exclude(group = "org.json", module = "json")
-    }
+    api(Deps.googleRtc)
     testImplementation(Deps.junit)
     androidTestImplementation(Deps.junitExt)
     androidTestImplementation(Deps.espresso)

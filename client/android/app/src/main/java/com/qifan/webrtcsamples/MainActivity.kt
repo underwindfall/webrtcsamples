@@ -19,9 +19,9 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.qifan.webrtc.extensions.common.* // ktlint-disable no-wildcard-imports
 import com.qifan.webrtcsamples.WebRtcActivity.Companion.startWebRtcActivity
 import com.qifan.webrtcsamples.databinding.ActivityMainBinding
-import com.qifan.webrtcsamples.extensions.* // ktlint-disable no-wildcard-imports
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -33,7 +33,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
-
+        editIpText.setText("http://10.153.8.197:8080")
+        editRoomIdText.setText("Room1")
         binding.btnConfirm.setOnClickListener {
             if (!editRoomIdText.text.isNullOrEmpty() && !editIpText.text.isNullOrEmpty()) {
                 checkPermissions()
@@ -44,7 +45,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions() {
-        if (permissionGranted(CAMERA_PERMISSION, AUDIO_PERMISSION, MODIFY_AUDIO_PERMISSION)) {
+        if (permissionGranted(
+            CAMERA_PERMISSION,
+            AUDIO_PERMISSION,
+            MODIFY_AUDIO_PERMISSION
+        )
+        ) {
             startWebRtcActivity(
                 roomId = editRoomIdText.text.toString(),
                 ipAddr = editIpText.text.toString()
@@ -84,7 +90,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestPermissionNow() {
         requestPermissionsCompat(
-            arrayOf(CAMERA_PERMISSION, AUDIO_PERMISSION, MODIFY_AUDIO_PERMISSION),
+            arrayOf(
+                CAMERA_PERMISSION,
+                AUDIO_PERMISSION,
+                MODIFY_AUDIO_PERMISSION
+            ),
             PERMISSION_REQUEST_CODE
         )
     }

@@ -1,2 +1,2 @@
 rootProject.name = "webrtcsamples"
-include(":app")
+include(":app", ":webrtc")

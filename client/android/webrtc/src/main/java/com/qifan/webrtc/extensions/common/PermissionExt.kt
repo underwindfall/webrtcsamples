@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.qifan.webrtcsamples.extensions
+package com.qifan.webrtc.extensions.common
 
 import android.Manifest
 import android.content.pm.PackageManager
