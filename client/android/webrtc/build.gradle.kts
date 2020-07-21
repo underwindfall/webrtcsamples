@@ -40,7 +40,11 @@ dependencies {
     implementation(Deps.appcompat)
     implementation(Deps.coreKtx)
     implementation(Deps.constraintLayout)
+    //Todo need to use implementation instead of api
     api(Deps.googleRtc)
+    implementation(Deps.socketIO) {
+        exclude(group = "org.json", module = "json")
+    }
     testImplementation(Deps.junit)
     androidTestImplementation(Deps.junitExt)
     androidTestImplementation(Deps.espresso)

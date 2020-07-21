@@ -24,12 +24,11 @@ import android.util.Log
  * @param args additional message
  */
 fun Any.debug(
-    tag: String = this::class.java.simpleName,
     message: String,
     vararg args: Any?
 ) {
     try {
-        Log.d(tag, message.format(*args))
+        Log.d(this::class.java.simpleName, message.format(*args))
     } catch (_: Exception) {
     }
 }
@@ -41,12 +40,11 @@ fun Any.debug(
  * @param args additional message
  */
 fun Any.warn(
-    tag: String = this::class.java.simpleName,
     message: String,
     vararg args: Any?
 ) {
     try {
-        Log.w(tag, message.format(*args))
+        Log.w(this::class.java.simpleName, message.format(*args))
     } catch (_: Exception) {
     }
 }
@@ -58,12 +56,11 @@ fun Any.warn(
  * @param args additional message
  */
 fun Any.error(
-    tag: String = this::class.java.simpleName,
     message: String,
     vararg args: Any?
 ) {
     try {
-        Log.e(tag, message.format(*args))
+        Log.e(this::class.java.simpleName, message.format(*args))
     } catch (_: Exception) {
     }
 }

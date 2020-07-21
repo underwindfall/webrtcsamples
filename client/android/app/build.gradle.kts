@@ -45,9 +45,6 @@ dependencies {
     implementation(Deps.appcompat)
     implementation(Deps.coreKtx)
     implementation(Deps.constraintLayout)
-    implementation(Deps.socketIO) {
-        exclude(group = "org.json", module = "json")
-    }
     testImplementation(Deps.junit)
     androidTestImplementation(Deps.junitExt)
     androidTestImplementation(Deps.espresso)

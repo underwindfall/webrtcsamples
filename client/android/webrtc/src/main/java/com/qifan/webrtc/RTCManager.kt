@@ -14,3 +14,70 @@
  * limitations under the License.
  */
 package com.qifan.webrtc
+
+import android.app.Application
+import android.content.Context
+import com.qifan.webrtc.extensions.common.WeakReferenceProvider
+import com.qifan.webrtc.extensions.common.debug
+import com.qifan.webrtc.extensions.rtc.async
+import org.json.JSONObject
+import kotlin.properties.Delegates
+
+class RTCManager(
+    context: Context,
+    private val url: String,
+    private val roomId: String
+) : SignalingClient.SignalEventListener {
+    private var context: Context by WeakReferenceProvider()
+
+    private var signalingState: SignalingState by Delegates.observable(SignalingState.IDLE) { property, oldValue, newValue ->
+        debug(message = "RTC Manager siganling state change $property [$oldValue====>$newValue]")
+        updateState(newValue)
+    }
+
+    private lateinit var peerConnectionClient: PeerConnectionClient
+
+    private lateinit var signalingClient: SignalingClient
+
+    init {
+        this.context = if (context is Application) context else context.applicationContext
+    }
+
+    private fun updateState(state: SignalingState) {
+        when (state) {
+            SignalingState.IDLE -> initSignalingServer()
+            SignalingState.INIT_SIGNALING -> initPeerConnection()
+//            SignalingState.INIT_PEER_CONNECTION -> createLocalPeer()
+        }
+    }
+
+    private fun initSignalingServer() {
+        signalingClient = SignalingClient()
+        signalingClient.initialize(url = url, roomId = roomId)
+    }
+
+    private fun initPeerConnection() {
+        async {
+            peerConnectionClient = PeerConnectionClient(context)
+            updateState(SignalingState.INIT_PEER_CONNECTION)
+        }
+    }
+
+    override fun onConnectedRoom() {
+    }
+
+    override fun onRemoteUserJoined() {
+    }
+
+    override fun onSendMessage(json: JSONObject) {
+    }
+
+    override fun onDisConnectRoom() {
+    }
+
+    private enum class SignalingState {
+        IDLE,
+        INIT_SIGNALING,
+        INIT_PEER_CONNECTION
+    }
+}
