@@ -23,6 +23,7 @@ import io.socket.client.Socket
 import org.json.JSONException
 import org.json.JSONObject
 import java.net.URISyntaxException
+import kotlin.properties.Delegates
 
 private const val EVENT_CREATED = "created"
 private const val EVENT_FULL = "full"
@@ -32,8 +33,8 @@ private const val EVENT_LOG = "log"
 private const val EVENT_MESSAGE = "message"
 private const val EVENT_CLOSE = "close"
 
-class SignalingClient() {
-    private lateinit var socket: Socket
+class SignalingClient {
+    private var socket: Socket by Delegates.notNull()
     private var eventListener: SignalEventListener? = null
 
     internal fun initialize(url: String, roomId: String, listener: SignalEventListener) {
@@ -53,10 +54,11 @@ class SignalingClient() {
             .on(Socket.EVENT_CONNECT) {
                 debug("Signaling socket connected")
                 socket.emit("create or join", roomId)
+                eventListener?.onConnectSignaling()
             }
             .on(EVENT_CREATED) {
                 debug("Signaling socket created")
-                eventListener?.onConnectedRoom()
+                eventListener?.onCreatedRoom()
             }
             .on(EVENT_FULL) {
                 warn("Signaling Socket Room is Full")
@@ -97,7 +99,8 @@ class SignalingClient() {
     }
 
     internal interface SignalEventListener {
-        fun onConnectedRoom()
+        fun onConnectSignaling()
+        fun onCreatedRoom()
         fun onRemoteUserJoined()
         fun onSendMessage(json: JSONObject)
         fun onDisConnectRoom()

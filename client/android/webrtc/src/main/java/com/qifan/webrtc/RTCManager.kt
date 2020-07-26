@@ -21,13 +21,17 @@ import com.qifan.webrtc.extensions.common.WeakReferenceProvider
 import com.qifan.webrtc.extensions.common.debug
 import com.qifan.webrtc.extensions.rtc.async
 import org.json.JSONObject
+import org.webrtc.*
 import kotlin.properties.Delegates
+import kotlin.properties.Delegates.notNull
 
 class RTCManager(
     context: Context,
     private val url: String,
     private val roomId: String
-) : SignalingClient.SignalEventListener {
+) : SignalingClient.SignalEventListener,
+    PeerConnection.Observer,
+    SdpObserver {
     private var context: Context by WeakReferenceProvider()
 
     private var signalingState: SignalingState by Delegates.observable(SignalingState.IDLE) { property, oldValue, newValue ->
@@ -35,9 +39,11 @@ class RTCManager(
         updateState(newValue)
     }
 
-    private lateinit var peerConnectionClient: PeerConnectionClient
+    private var peerConnectionClient: PeerConnectionClient by notNull()
 
-    private lateinit var signalingClient: SignalingClient
+    private var signalingClient: SignalingClient by notNull()
+
+    private var isInitiator = false
 
     init {
         this.context = if (context is Application) context else context.applicationContext
@@ -47,37 +53,121 @@ class RTCManager(
         when (state) {
             SignalingState.IDLE -> initSignalingServer()
             SignalingState.INIT_SIGNALING -> initPeerConnection()
-//            SignalingState.INIT_PEER_CONNECTION -> createLocalPeer()
+            SignalingState.INIT_PEER_CONNECTION -> createLocalPeer()
+            SignalingState.CREATE_OFFER -> createLocalOffer()
         }
     }
 
     private fun initSignalingServer() {
-        signalingClient = SignalingClient()
-        signalingClient.initialize(url = url, roomId = roomId)
+        async {
+            signalingClient = SignalingClient()
+            signalingClient.initialize(url = url, roomId = roomId, listener = this)
+        }
     }
 
     private fun initPeerConnection() {
         async {
             peerConnectionClient = PeerConnectionClient(context)
-            updateState(SignalingState.INIT_PEER_CONNECTION)
+            signalingState = SignalingState.INIT_PEER_CONNECTION
         }
     }
 
-    override fun onConnectedRoom() {
+    private fun createLocalPeer() {
+        async {
+            peerConnectionClient.createLocalPeer(this)
+        }
+    }
+
+    private fun createLocalOffer() {
+        async {
+            peerConnectionClient.createLocalOffer(this)
+        }
+    }
+
+    override fun onConnectSignaling() {
+        signalingState = SignalingState.INIT_SIGNALING
+    }
+
+    override fun onCreatedRoom() {
+        isInitiator = true
     }
 
     override fun onRemoteUserJoined() {
+
     }
 
     override fun onSendMessage(json: JSONObject) {
+
     }
 
     override fun onDisConnectRoom() {
+
+    }
+
+    override fun onIceCandidate(p0: IceCandidate?) {
+
+    }
+
+    override fun onDataChannel(p0: DataChannel?) {
+
+    }
+
+    override fun onIceConnectionReceivingChange(p0: Boolean) {
+
+    }
+
+    override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {
+
+    }
+
+    override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {
+
+    }
+
+    override fun onAddStream(p0: MediaStream?) {
+
+    }
+
+    override fun onSignalingChange(p0: PeerConnection.SignalingState?) {
+
+    }
+
+    override fun onIceCandidatesRemoved(p0: Array<out IceCandidate>?) {
+
+    }
+
+    override fun onRemoveStream(p0: MediaStream?) {
+
+    }
+
+    override fun onRenegotiationNeeded() {
+
+    }
+
+    override fun onAddTrack(p0: RtpReceiver?, p1: Array<out MediaStream>?) {
+
+    }
+
+    override fun onSetFailure(p0: String?) {
+
+    }
+
+    override fun onSetSuccess() {
+
+    }
+
+    override fun onCreateSuccess(p0: SessionDescription?) {
+
+    }
+
+    override fun onCreateFailure(p0: String?) {
+
     }
 
     private enum class SignalingState {
         IDLE,
         INIT_SIGNALING,
-        INIT_PEER_CONNECTION
+        INIT_PEER_CONNECTION,
+        CREATE_OFFER
     }
 }

@@ -21,12 +21,16 @@ import com.qifan.webrtc.extensions.rtc.* // ktlint-disable no-wildcard-imports
 import org.webrtc.* // ktlint-disable no-wildcard-imports
 import kotlin.properties.Delegates.notNull
 
-class PeerConnectionClient(
-    context: Context
-) {
+class PeerConnectionClient(context: Context) {
     private var context: Context by WeakReferenceProvider()
 
     private val rootEglBase: EglBase by lazy { buildRootEglBase() }
+
+    private val stunServer: PeerConnection.IceServer by lazy {
+        PeerConnection.IceServer
+            .builder("stun:stun1.l.google.com:19302")
+            .createIceServer()
+    }
 
     private var localPeerConnection: PeerConnection? = null
 
@@ -34,7 +38,6 @@ class PeerConnectionClient(
 
     private var remoteViewRenderer: SurfaceViewRenderer by WeakReferenceProvider()
 
-    // todo need to refactor by customize mediacontraints
     private var mediaConstraints: MediaConstraints = MediaConstraints().apply {
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
@@ -61,6 +64,7 @@ class PeerConnectionClient(
 
     init {
         this.context = context
+        peerConnectionFactory = createPeerConnectionFactory()
     }
 
     internal fun buildRTCPeerClient(
@@ -69,9 +73,19 @@ class PeerConnectionClient(
     ) {
         this.localViewRenderer = localViewRenderer
         this.remoteViewRenderer = remoteViewRenderer
-        // set up peer connection factory
-        peerConnectionFactory = createPeerConnectionFactory()
-        // set up VideoCapturer
+    }
+
+
+    internal fun createLocalPeer(observer: PeerConnection.Observer) {
+        PeerConnection.RTCConfiguration(listOf(stunServer)).apply {
+            continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
+        }.also { config ->
+            localPeerConnection = peerConnectionFactory.createPeerConnection(config, observer)
+        }
+    }
+
+    internal fun createLocalOffer(sdpObserver: SdpObserver) {
+        localPeerConnection?.createOffer(sdpObserver, mediaConstraints)
     }
 
     private fun createPeerConnectionFactory(): PeerConnectionFactory {
