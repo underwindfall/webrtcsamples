@@ -49,6 +49,10 @@ class SignalingClient {
         }
     }
 
+    internal fun sendMessage(message: JSONObject) {
+        socket.emit("message", message)
+    }
+
     private fun attachSignalEvents(roomId: String) {
         socket
             .on(Socket.EVENT_CONNECT) {
@@ -81,7 +85,7 @@ class SignalingClient {
                         // TODO error manager
                         error("Receive Socket message have problem")
                     }
-                    eventListener?.onSendMessage(message)
+                    eventListener?.onReceiveMessage(message)
                 } catch (e: JSONException) {
                     // TODO error manager
                     e.printStackTrace()
@@ -102,7 +106,7 @@ class SignalingClient {
         fun onConnectSignaling()
         fun onCreatedRoom()
         fun onRemoteUserJoined()
-        fun onSendMessage(json: JSONObject)
+        fun onReceiveMessage(json: JSONObject)
         fun onDisConnectRoom()
     }
 }

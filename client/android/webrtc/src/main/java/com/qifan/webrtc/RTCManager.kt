@@ -18,11 +18,9 @@ package com.qifan.webrtc
 import android.app.Application
 import android.content.Context
 import com.qifan.webrtc.extensions.common.WeakReferenceProvider
-import com.qifan.webrtc.extensions.common.debug
 import com.qifan.webrtc.extensions.rtc.async
 import org.json.JSONObject
 import org.webrtc.*
-import kotlin.properties.Delegates
 import kotlin.properties.Delegates.notNull
 
 class RTCManager(
@@ -34,29 +32,24 @@ class RTCManager(
     SdpObserver {
     private var context: Context by WeakReferenceProvider()
 
-    private var signalingState: SignalingState by Delegates.observable(SignalingState.IDLE) { property, oldValue, newValue ->
-        debug(message = "RTC Manager siganling state change $property [$oldValue====>$newValue]")
-        updateState(newValue)
-    }
-
     private var peerConnectionClient: PeerConnectionClient by notNull()
 
     private var signalingClient: SignalingClient by notNull()
 
+    private var localSdp: SessionDescription by notNull()
+
     private var isInitiator = false
+    private var isChannelReady = false
 
     init {
         this.context = if (context is Application) context else context.applicationContext
     }
 
-    private fun updateState(state: SignalingState) {
-        when (state) {
-            SignalingState.IDLE -> initSignalingServer()
-            SignalingState.INIT_SIGNALING -> initPeerConnection()
-            SignalingState.INIT_PEER_CONNECTION -> createLocalPeer()
-            SignalingState.CREATE_OFFER -> createLocalOffer()
-        }
+
+    internal fun initializeRTC() {
+        initSignalingServer()
     }
+
 
     private fun initSignalingServer() {
         async {
@@ -68,12 +61,6 @@ class RTCManager(
     private fun initPeerConnection() {
         async {
             peerConnectionClient = PeerConnectionClient(context)
-            signalingState = SignalingState.INIT_PEER_CONNECTION
-        }
-    }
-
-    private fun createLocalPeer() {
-        async {
             peerConnectionClient.createLocalPeer(this)
         }
     }
@@ -85,7 +72,7 @@ class RTCManager(
     }
 
     override fun onConnectSignaling() {
-        signalingState = SignalingState.INIT_SIGNALING
+        initPeerConnection()
     }
 
     override fun onCreatedRoom() {
@@ -93,10 +80,21 @@ class RTCManager(
     }
 
     override fun onRemoteUserJoined() {
-
+        isChannelReady = true
+        if (isInitiator) {
+            peerConnectionClient.createLocalOffer(this)
+        }
     }
 
-    override fun onSendMessage(json: JSONObject) {
+    override fun onReceiveMessage(json: JSONObject) {
+        when (json.getString("type")) {
+            "send_offer" -> {
+                peerConnectionClient.setRemoteSdp(
+                    this,
+                    SessionDescription(SessionDescription.Type.OFFER, json.getString("sdp"))
+                )
+            }
+        }
 
     }
 
@@ -104,6 +102,7 @@ class RTCManager(
 
     }
 
+    //PeerConnection Observer
     override fun onIceCandidate(p0: IceCandidate?) {
 
     }
@@ -148,26 +147,36 @@ class RTCManager(
 
     }
 
-    override fun onSetFailure(p0: String?) {
+    //SDP Observer
+    override fun onSetFailure(p0: String) {
 
     }
 
     override fun onSetSuccess() {
+        if (isInitiator) {
+            JSONObject().apply {
+                put("type", "send_offer")
+                put("sdp", localSdp)
+            }.also {
+                signalingClient.sendMessage(it)
+            }
+        } else {
+            peerConnectionClient.createAnswer(this)
+        }
 
     }
 
-    override fun onCreateSuccess(p0: SessionDescription?) {
-
+    override fun onCreateSuccess(sdp: SessionDescription) {
+        localSdp = sdp
+        if (isInitiator) {
+            peerConnectionClient.setLocalSdp(this, localSdp)
+        } else {
+            peerConnectionClient.
+        }
     }
 
     override fun onCreateFailure(p0: String?) {
 
     }
 
-    private enum class SignalingState {
-        IDLE,
-        INIT_SIGNALING,
-        INIT_PEER_CONNECTION,
-        CREATE_OFFER
-    }
 }

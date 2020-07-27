@@ -40,7 +40,10 @@ android {
 }
 
 dependencies {
-    implementation(project(":webrtc"))
+    implementation(Deps.googleRtc)
+    implementation(Deps.socketIO) {
+        exclude(group = "org.json", module = "json")
+    }
     implementation(Deps.kotlinLibrary)
     implementation(Deps.appcompat)
     implementation(Deps.coreKtx)

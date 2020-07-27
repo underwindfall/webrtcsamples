@@ -41,7 +41,7 @@ dependencies {
     implementation(Deps.coreKtx)
     implementation(Deps.constraintLayout)
     //Todo need to use implementation instead of api
-    api(Deps.googleRtc)
+    implementation(Deps.googleRtc)
     implementation(Deps.socketIO) {
         exclude(group = "org.json", module = "json")
     }

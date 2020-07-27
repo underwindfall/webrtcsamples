@@ -88,6 +88,18 @@ class PeerConnectionClient(context: Context) {
         localPeerConnection?.createOffer(sdpObserver, mediaConstraints)
     }
 
+    internal fun setLocalSdp(sdpObserver: SdpObserver, sdp: SessionDescription) {
+        localPeerConnection?.setLocalDescription(sdpObserver, sdp)
+    }
+
+    internal fun setRemoteSdp(sdpObserver: SdpObserver, sdp: SessionDescription) {
+        localPeerConnection?.setRemoteDescription(sdpObserver, sdp)
+    }
+
+    internal fun createAnswer(sdpObserver: SdpObserver) {
+        localPeerConnection?.createAnswer(sdpObserver, mediaConstraints)
+    }
+
     private fun createPeerConnectionFactory(): PeerConnectionFactory {
         val options = PeerConnectionFactory.Options()
         val decoderVideoFactory = DefaultVideoDecoderFactory(rootEglBase.eglBaseContext)
