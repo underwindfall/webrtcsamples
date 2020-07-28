@@ -466,6 +466,7 @@ class WebRtcActivity : AppCompatActivity() {
      * release relevant sources to avoid memory leak
      */
     private fun cleanupRtc() {
+        socket.emit("leave")
         socket.disconnect()
         socket.close()
         localViewRender.release()
