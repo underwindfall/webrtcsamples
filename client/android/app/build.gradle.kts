@@ -39,7 +39,10 @@ android {
     }
 }
 
+val debugImplementation by configurations
+
 dependencies {
+    debugImplementation(Deps.leakCanary)
     implementation(Deps.googleRtc)
     implementation(Deps.socketIO) {
         exclude(group = "org.json", module = "json")

@@ -26,6 +26,8 @@ object Deps {
     const val coreKtx = "androidx.core:core-ktx:${Versions.core}"
     const val constraintLayout = "androidx.constraintlayout:constraintlayout:1.1.3"
 
+    const val leakCanary ="com.squareup.leakcanary:leakcanary-android:2.4"
+
     const val socketIO = "io.socket:socket.io-client:1.0.0"
 
     const val googleRtc = "org.webrtc:google-webrtc:1.0.30039"
