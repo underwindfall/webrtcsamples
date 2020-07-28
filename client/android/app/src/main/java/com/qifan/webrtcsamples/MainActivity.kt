@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
-        editIpText.setText("http://10.153.24.133:8080")
+        editIpText.setText("http://192.168.1.29:8080")
         editRoomIdText.setText("Room1")
         binding.btnConfirm.setOnClickListener {
             if (!editRoomIdText.text.isNullOrEmpty() && !editIpText.text.isNullOrEmpty()) {
