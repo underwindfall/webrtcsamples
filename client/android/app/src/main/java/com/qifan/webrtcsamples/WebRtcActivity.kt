@@ -25,17 +25,15 @@ import com.qifan.webrtcsamples.constants.LOCAL_STREAM_ID
 import com.qifan.webrtcsamples.constants.VIDEO_RESOLUTION_HEIGHT
 import com.qifan.webrtcsamples.constants.VIDEO_RESOLUTION_WIDTH
 import com.qifan.webrtcsamples.databinding.ActivityWebRtcBinding
-import com.qifan.webrtcsamples.extensions.common.WeakReferenceProvider
 import com.qifan.webrtcsamples.extensions.common.debug
 import com.qifan.webrtcsamples.extensions.common.error
 import com.qifan.webrtcsamples.extensions.common.warn
-import com.qifan.webrtcsamples.extensions.rtc.*
+import com.qifan.webrtcsamples.extensions.rtc.*// ktlint-disable no-wildcard-imports
 import io.socket.client.IO
 import io.socket.client.Socket
 import org.json.JSONException
 import org.json.JSONObject
-import org.webrtc.*
-import org.webrtc.audio.AudioDeviceModule
+import org.webrtc.*// ktlint-disable no-wildcard-imports
 import org.webrtc.audio.JavaAudioDeviceModule
 import java.net.URISyntaxException
 import kotlin.properties.Delegates.notNull
