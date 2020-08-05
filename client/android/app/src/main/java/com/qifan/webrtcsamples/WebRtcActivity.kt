@@ -412,13 +412,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
             .createPeerConnectionFactory()
     }
 
-//    private class PeerConnectionObserver(activity: WebRtcActivity) :
-//        PeerConnection.Observer {
-//        private var mActivity: WebRtcActivity by WeakReferenceProvider()
-//
-//        init {
-//            this.mActivity = activity
-//        }
 
     override fun onIceCandidate(iceCandidate: IceCandidate) {
         debug("onIceCandidate $iceCandidate")
@@ -430,7 +423,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
             put("candidate", iceCandidate.sdp)
         }.apply {
             debug("onIceCandidate: sending candidate $this")
-//                mActivity.sendMessage(this)
             sendMessage(this)
         }
     }
@@ -454,7 +446,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
     override fun onAddStream(mediaStream: MediaStream?) {
         debug("onAddStream mediaStream size is ${mediaStream?.videoTracks?.size}")
         val remoteVideoTrack = mediaStream?.videoTracks?.firstOrNull()
-//            remoteVideoTrack?.addSink(mActivity.remoteViewRender)
         remoteVideoTrack?.addSink(remoteViewRender)
     }
 
@@ -478,7 +469,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         warn("onAddTrack")
     }
 
-//    }
 
     /**
      * benefit of socket io to deal with socket
@@ -488,54 +478,44 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
     }
 
 
-    override fun onDestroy() {
-        super.onDestroy()
-    }
-
     /**
      * release relevant sources to avoid memory leak
      */
     private fun cleanupRtc() {
-        async {
-            socket.emit("leave")
-            socket.off()
-            socket.disconnect()
-            localViewRender.release()
-            remoteViewRender.release()
+        socket.emit("leave")
+        socket.off()
+        socket.disconnect()
+        localViewRender.release()
+        remoteViewRender.release()
 
 
-//        remoteVideoTrack?.removeSink(remoteViewRender)
-//        remoteVideoTrack?.dispose()
-
-
-            try {
-                videoCapturer.stopCapture()
-            } catch (e: InterruptedException) {
-                error("error stop video capturer")
-            }
-            videoCapturer.dispose()
-            surfaceTextureHelper.dispose()
-
-            localAudioSource?.dispose()
-            localAudioSource = null
-
-            localVideoSource?.dispose()
-            localVideoSource = null
-
-            peerConnection?.dispose()
-            peerConnection = null
-            localAudioTrack = null
-            localVideoTrack = null
-            peerConnection = null
-            rootEglBase.release()
-
-            peerConnectionFactory?.dispose()
-            peerConnectionFactory = null
-            PeerConnectionFactory.stopInternalTracingCapture()
-            PeerConnectionFactory.shutdownInternalTracer()
-
-            finish()
+        try {
+            videoCapturer.stopCapture()
+        } catch (e: InterruptedException) {
+            error("error stop video capturer")
         }
+        videoCapturer.dispose()
+        surfaceTextureHelper.dispose()
+
+        localAudioSource?.dispose()
+        localAudioSource = null
+
+        localVideoSource?.dispose()
+        localVideoSource = null
+
+        peerConnection?.dispose()
+        peerConnection = null
+        localAudioTrack = null
+        localVideoTrack = null
+        peerConnection = null
+        rootEglBase.release()
+
+        peerConnectionFactory?.dispose()
+        peerConnectionFactory = null
+        PeerConnectionFactory.stopInternalTracingCapture()
+        PeerConnectionFactory.shutdownInternalTracer()
+
+        finish()
     }
 
 }

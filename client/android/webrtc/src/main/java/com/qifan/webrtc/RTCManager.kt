@@ -15,23 +15,19 @@
  */
 package com.qifan.webrtc
 
-import android.app.Application
 import android.content.Context
-import com.qifan.webrtc.extensions.common.WeakReferenceProvider
 import com.qifan.webrtc.extensions.rtc.async
 import org.json.JSONObject
 import org.webrtc.*
 import kotlin.properties.Delegates.notNull
 
 class RTCManager(
-    context: Context,
+    private val context: Context,
     private val url: String,
     private val roomId: String
 ) : SignalingClient.SignalEventListener,
     PeerConnection.Observer,
     SdpObserver {
-    private var context: Context by WeakReferenceProvider()
-
     private var peerConnectionClient: PeerConnectionClient by notNull()
 
     private var signalingClient: SignalingClient by notNull()
@@ -40,10 +36,6 @@ class RTCManager(
 
     private var isInitiator = false
     private var isChannelReady = false
-
-    init {
-        this.context = if (context is Application) context else context.applicationContext
-    }
 
 
     internal fun initializeRTC() {
