@@ -155,7 +155,7 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
             socket
                 .on(Socket.EVENT_CONNECT) {
                     debug("$messagePrefix connect")
-                    socket.emit("create or join", "foo")
+                    socket.emit("create or join", roomId)
                 }
                 .on("ipaddr") {
                     debug("$messagePrefix ipaddr")
@@ -172,6 +172,7 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
                     debug("$messagePrefix Another peer made a requst to join room")
                     debug("$messagePrefix This peer is the intiator of room")
                     isChannelReady = true
+                  maybeStart()
                 }
                 .on("joined") {
                     debug("$messagePrefix joined")
@@ -186,9 +187,9 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
 
                         val message = args.firstOrNull() as JSONObject
                         when {
-                            message.getString("type") == TYPE_CREATE_OFFER -> {
-                                maybeStart()
-                            }
+//                            message.getString("type") == TYPE_CREATE_OFFER -> {
+//                                maybeStart()
+//                            }
                             message.getString("type") == TYPE_SEND_OFFER -> {
                                 debug("$messagePrefix type offer isInitiator======>$isInitiator isStarted ======>$isStarted")
                                 if (!isInitiator && !isStarted) {
@@ -347,10 +348,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         localStream?.addTrack(localVideoTrack)
         localStream?.addTrack(localAudioTrack)
         peerConnection?.addStream(localStream)
-        JSONObject().apply {
-            put("type", TYPE_CREATE_OFFER)
-            sendMessage(this)
-        }
     }
 
     /**
