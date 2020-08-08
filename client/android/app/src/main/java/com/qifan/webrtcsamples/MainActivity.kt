@@ -21,7 +21,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.qifan.webrtcsamples.WebRtcActivity.Companion.startWebRtcActivity
 import com.qifan.webrtcsamples.databinding.ActivityMainBinding
-import com.qifan.webrtcsamples.extensions.common.*// ktlint-disable no-wildcard-imports
+import com.qifan.webrtcsamples.extensions.common.* // ktlint-disable no-wildcard-imports
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -46,10 +46,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkPermissions() {
         if (permissionGranted(
-                CAMERA_PERMISSION,
-                AUDIO_PERMISSION,
-                MODIFY_AUDIO_PERMISSION
-            )
+            CAMERA_PERMISSION,
+            AUDIO_PERMISSION,
+            MODIFY_AUDIO_PERMISSION
+        )
         ) {
             startWebRtcActivity(
                 roomId = editRoomIdText.text.toString(),
@@ -62,10 +62,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun requirePermissions() {
         if (shouldShowRequestPermissionRationaleCompat(
-                CAMERA_PERMISSION,
-                AUDIO_PERMISSION,
-                MODIFY_AUDIO_PERMISSION
-            )
+            CAMERA_PERMISSION,
+            AUDIO_PERMISSION,
+            MODIFY_AUDIO_PERMISSION
+        )
         ) {
             showPermissionRationaleDialog()
         } else {

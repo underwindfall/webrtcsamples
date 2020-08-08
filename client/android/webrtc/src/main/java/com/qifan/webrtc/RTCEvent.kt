@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.qifan.webrtcsamples
+package com.qifan.webrtc
 
-import android.app.Application
+sealed class RTCEvent {
+    object Idle : RTCEvent()
+    object Connecting : RTCEvent()
 
-class WebRtcApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
+    sealed class ParticipantEvent : RTCEvent() {
+        object ParticipantConnected : ParticipantEvent()
     }
 }

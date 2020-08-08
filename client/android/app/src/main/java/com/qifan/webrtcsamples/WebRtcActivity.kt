@@ -18,7 +18,6 @@ package com.qifan.webrtcsamples
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.qifan.webrtcsamples.constants.FPS
 import com.qifan.webrtcsamples.constants.LOCAL_STREAM_ID
@@ -28,12 +27,12 @@ import com.qifan.webrtcsamples.databinding.ActivityWebRtcBinding
 import com.qifan.webrtcsamples.extensions.common.debug
 import com.qifan.webrtcsamples.extensions.common.error
 import com.qifan.webrtcsamples.extensions.common.warn
-import com.qifan.webrtcsamples.extensions.rtc.*// ktlint-disable no-wildcard-imports
+import com.qifan.webrtcsamples.extensions.rtc.* // ktlint-disable no-wildcard-imports
 import io.socket.client.IO
 import io.socket.client.Socket
 import org.json.JSONException
 import org.json.JSONObject
-import org.webrtc.*// ktlint-disable no-wildcard-imports
+import org.webrtc.* // ktlint-disable no-wildcard-imports
 import org.webrtc.audio.JavaAudioDeviceModule
 import java.net.URISyntaxException
 import kotlin.properties.Delegates.notNull
@@ -47,9 +46,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
 
     private lateinit var roomId: String
     private lateinit var ipAddr: String
-    private var isInitiator = false
-    private var isChannelReady = false
-    private var isStarted = false
     private var enabledAudio = true
 
     private var socket: Socket by notNull()
@@ -70,7 +66,7 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         }
     }
 
-    //Since we use a real local server to achieve signaling so there is only one peer connection
+    // Since we use a real local server to achieve signaling so there is only one peer connection
     private var peerConnection: PeerConnection? = null
 
     private val surfaceTextureHelper: SurfaceTextureHelper by lazy {
@@ -84,7 +80,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
     companion object {
         private const val ROOM = "ROOM"
         private const val IPADDRESS = "IPADDRESS"
-        private const val TYPE_CREATE_OFFER = "create_offer"
         private const val TYPE_SEND_OFFER = "send_offer"
         private const val TYPE_SEND_ANSWER = "send_answer"
         private const val TYPE_SEND_CANDIDATE = "send_candidate"
@@ -162,7 +157,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
                 }
                 .on("created") {
                     debug("$messagePrefix created")
-                    isInitiator = true
                 }
                 .on("full") {
                     debug("$messagePrefix full")
@@ -171,30 +165,23 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
                     debug("$messagePrefix join")
                     debug("$messagePrefix Another peer made a requst to join room")
                     debug("$messagePrefix This peer is the intiator of room")
-                    isChannelReady = true
-                  maybeStart()
+                    createOffer()
                 }
                 .on("joined") {
                     debug("$messagePrefix joined")
-                    isChannelReady = true
                 }
                 .on("log") { args ->
-                    args.forEach { debug("$messagePrefix $it") }
+//                    args.forEach { debug("$messagePrefix $it") }
                 }
                 .on("message") { args ->
-                    debug("$messagePrefix message")
                     try {
-
                         val message = args.firstOrNull() as JSONObject
+                        debug("$messagePrefix $message")
                         when {
-//                            message.getString("type") == TYPE_CREATE_OFFER -> {
-//                                maybeStart()
-//                            }
                             message.getString("type") == TYPE_SEND_OFFER -> {
-                                debug("$messagePrefix type offer isInitiator======>$isInitiator isStarted ======>$isStarted")
-                                if (!isInitiator && !isStarted) {
-                                    maybeStart()
-                                }
+//                                    if (!isStarted) {
+//                                        maybeStart()
+//                                    }
                                 peerConnection?.setRemoteDescription(
                                     SimpleObserver(
                                         SimpleObserver.Source.RECEIVER_REMOTE
@@ -206,7 +193,7 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
                                 )
                                 createAnswer()
                             }
-                            message.getString("type") == TYPE_SEND_ANSWER && isStarted -> {
+                            message.getString("type") == TYPE_SEND_ANSWER -> {
                                 debug("$messagePrefix type answer")
                                 peerConnection?.setRemoteDescription(
                                     SimpleObserver(
@@ -218,24 +205,20 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
                                     )
                                 )
                             }
-                            message.getString("type") == TYPE_SEND_CANDIDATE && isStarted -> {
+                            message.getString("type") == TYPE_SEND_CANDIDATE -> {
                                 debug("$messagePrefix receiving candidates")
                                 val candidate = IceCandidate(
                                     message.getString("id"),
                                     message.getInt("label"),
-                                    message.getString(
-                                        "candidate"
-                                    )
+                                    message.getString("candidate")
                                 )
                                 peerConnection?.addIceCandidate(candidate)
                             }
                         }
                     } catch (e: JSONException) {
-
                     }
                 }
                 .on("close") {
-                    Log.d("Qifan", "NEVER")
                     cleanupRtc()
                 }
                 .on(Socket.EVENT_DISCONNECT) {
@@ -244,16 +227,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
             socket.connect()
         } catch (e: URISyntaxException) {
             e.printStackTrace()
-        }
-    }
-
-    private fun maybeStart() {
-        debug("maybeStart======> isStarted=====$isStarted  isChannelReady=====$isChannelReady")
-        if (!isStarted && isChannelReady) {
-            isStarted = true
-            if (isInitiator) {
-                createOffer()
-            }
         }
     }
 
@@ -278,7 +251,8 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
                         sendMessage(this)
                     }
                 }
-            }, mediaConstraints
+            },
+            mediaConstraints
         )
     }
 
@@ -306,7 +280,8 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
                         sendMessage(this)
                     }
                 }
-            }, mediaConstraints
+            },
+            mediaConstraints
         )
     }
 
@@ -378,7 +353,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         view.initializeSurfaceView(rootEglBase)
     }
 
-
     /**
      * PeerConnectionFactory is used to create PeerConnection, MediaStream and
      * MediaStreamTrack objects
@@ -392,14 +366,14 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
             .setUseHardwareAcousticEchoCanceler(true)
             .setUseHardwareNoiseSuppressor(true)
             .createAudioDeviceModule()
-        //load ndk webrtc native library into process
+        // load ndk webrtc native library into process
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions
                 .builder(applicationContext)
                 .setEnableInternalTracer(false)
                 .createInitializationOptions()
         )
-        //configure connection factory
+        // configure connection factory
         peerConnectionFactory = PeerConnectionFactory
             .builder()
             .setOptions(options)
@@ -408,7 +382,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
             .setVideoEncoderFactory(encoderFactory)
             .createPeerConnectionFactory()
     }
-
 
     override fun onIceCandidate(iceCandidate: IceCandidate) {
         debug("onIceCandidate $iceCandidate")
@@ -433,7 +406,7 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
     }
 
     override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {
-        warn("onIceConnectionChange")
+        warn("onIceConnectionChange $p0")
     }
 
     override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {
@@ -466,14 +439,12 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         warn("onAddTrack")
     }
 
-
     /**
      * benefit of socket io to deal with socket
      */
     private fun sendMessage(message: Any) {
         socket.emit("message", message)
     }
-
 
     /**
      * release relevant sources to avoid memory leak
@@ -484,7 +455,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         socket.disconnect()
         localViewRender.release()
         remoteViewRender.release()
-
 
         try {
             videoCapturer.stopCapture()
@@ -514,5 +484,4 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
 
         finish()
     }
-
 }

@@ -17,87 +17,48 @@ package com.qifan.webrtc
 
 import android.content.Context
 import com.qifan.webrtc.extensions.common.WeakReferenceProvider
-import com.qifan.webrtc.extensions.rtc.* // ktlint-disable no-wildcard-imports
+import com.qifan.webrtc.extensions.rtc.buildRootEglBase
+import com.qifan.webrtc.extensions.rtc.buildVideoCapturer
+import com.qifan.webrtc.extensions.rtc.createJavaAudioDevice
+import com.qifan.webrtc.extensions.rtc.createSurfaceTexture
 import org.webrtc.* // ktlint-disable no-wildcard-imports
-import kotlin.properties.Delegates.notNull
 
 class PeerConnectionClient(context: Context) {
     private var context: Context by WeakReferenceProvider()
 
     private val rootEglBase: EglBase by lazy { buildRootEglBase() }
 
-    private val stunServer: PeerConnection.IceServer by lazy {
+    private val defaultStunServer: PeerConnection.IceServer by lazy {
         PeerConnection.IceServer
-            .builder("stun:stun1.l.google.com:19302")
+            .builder("stun:stun.l.google.com:19302")
             .createIceServer()
     }
 
-    private var localPeerConnection: PeerConnection? = null
+    private var peerConnection: PeerConnection? = null
 
-    private var localViewRenderer: SurfaceViewRenderer by WeakReferenceProvider()
+    private var localViewRenderer: SurfaceViewRenderer? = null
 
-    private var remoteViewRenderer: SurfaceViewRenderer by WeakReferenceProvider()
+    private var remoteViewRenderer: SurfaceViewRenderer? = null
 
     private var mediaConstraints: MediaConstraints = MediaConstraints().apply {
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
     }
 
-    private var peerConnectionFactory: PeerConnectionFactory by notNull()
+    private var peerConnectionFactory: PeerConnectionFactory? = null
     private val videoCapturer: CameraVideoCapturer by lazy { context.buildVideoCapturer() }
+
     private val surfaceTextureHelper: SurfaceTextureHelper by lazy {
         createSurfaceTexture(sharedContext = rootEglBase.eglBaseContext)
     }
-    private val videoSource: VideoSource by lazy {
-        createVideoSource(peerConnectionFactory, videoCapturer.isScreencast)
-    }
-    private val videoTrack: VideoTrack by lazy {
-        createVideoTrack(peerConnectionFactory, videoSource = videoSource)
-    }
-    private var remoteVideoTrack: VideoTrack? = null
-    private val audioSource: AudioSource by lazy {
-        createAudioSource(peerConnectionFactory)
-    }
-    private val audioTrack: AudioTrack by lazy {
-        createAudioTrack(peerConnectionFactory, audioSource = audioSource)
-    }
+    private val videoSource: VideoSource? = null
+    private val videoTrack: VideoTrack? = null
+    private val audioSource: AudioSource? = null
+    private val audioTrack: AudioTrack? = null
 
     init {
         this.context = context
         peerConnectionFactory = createPeerConnectionFactory()
-    }
-
-    internal fun buildRTCPeerClient(
-        localViewRenderer: SurfaceViewRenderer,
-        remoteViewRenderer: SurfaceViewRenderer
-    ) {
-        this.localViewRenderer = localViewRenderer
-        this.remoteViewRenderer = remoteViewRenderer
-    }
-
-
-    internal fun createLocalPeer(observer: PeerConnection.Observer) {
-        PeerConnection.RTCConfiguration(listOf(stunServer)).apply {
-            continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
-        }.also { config ->
-            localPeerConnection = peerConnectionFactory.createPeerConnection(config, observer)
-        }
-    }
-
-    internal fun createLocalOffer(sdpObserver: SdpObserver) {
-        localPeerConnection?.createOffer(sdpObserver, mediaConstraints)
-    }
-
-    internal fun setLocalSdp(sdpObserver: SdpObserver, sdp: SessionDescription) {
-        localPeerConnection?.setLocalDescription(sdpObserver, sdp)
-    }
-
-    internal fun setRemoteSdp(sdpObserver: SdpObserver, sdp: SessionDescription) {
-        localPeerConnection?.setRemoteDescription(sdpObserver, sdp)
-    }
-
-    internal fun createAnswer(sdpObserver: SdpObserver) {
-        localPeerConnection?.createAnswer(sdpObserver, mediaConstraints)
     }
 
     private fun createPeerConnectionFactory(): PeerConnectionFactory {
@@ -120,5 +81,13 @@ class PeerConnectionClient(context: Context) {
             .setVideoEncoderFactory(encoderFactory)
             .setAudioDeviceModule(audioDeviceFactory)
             .createPeerConnectionFactory()
+    }
+
+    internal fun setSurfaceView(
+        localViewRenderer: SurfaceViewRenderer,
+        remoteViewRenderer: SurfaceViewRenderer
+    ) {
+        this.localViewRenderer = localViewRenderer
+        this.remoteViewRenderer = remoteViewRenderer
     }
 }
