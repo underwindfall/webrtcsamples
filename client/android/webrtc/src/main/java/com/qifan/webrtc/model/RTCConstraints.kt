@@ -13,11 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.qifan.webrtcsamples.constants
+package com.qifan.webrtc.model
 
-const val VIDEO_RESOLUTION_WIDTH = 1280
-const val VIDEO_RESOLUTION_HEIGHT = 720
-const val FPS = 60
-const val LOCAL_VIDEO_TRACK_ID = "local_video_track_id"
-const val LOCAL_AUDIO_TRACK_ID = "local_audio_track_id"
-const val LOCAL_STREAM_ID = "local_stream_id"
+import org.webrtc.MediaConstraints
+
+internal data class RTCConstraints(
+    val audio: MediaConstraints.KeyValuePair = MediaConstraints.KeyValuePair(
+        "OfferToReceiveAudio",
+        "true"
+    ),
+    val video: MediaConstraints.KeyValuePair = MediaConstraints.KeyValuePair(
+        "OfferToReceiveVideo",
+        "true"
+    )
+)
+
+internal fun RTCConstraints.toConstraints(): MediaConstraints {
+    return MediaConstraints().apply {
+        mandatory.add(audio)
+        mandatory.add(video)
+    }
+}

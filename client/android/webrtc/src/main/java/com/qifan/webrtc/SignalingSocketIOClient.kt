@@ -19,6 +19,8 @@ import com.qifan.webrtc.extensions.common.debug
 import io.socket.client.IO
 import io.socket.client.Socket
 import org.json.JSONObject
+import org.webrtc.IceCandidate
+import org.webrtc.SessionDescription
 import java.net.URISyntaxException
 import kotlin.properties.Delegates.notNull
 
@@ -42,9 +44,8 @@ internal class SignalingSocketIOClient {
         try {
             this.listener = listener
             socket = IO.socket(identity)
-                .apply {
-                    attachSocketListeners(roomName)
-                }
+            attachSocketListeners(roomName)
+            socket.connect()
         } catch (e: URISyntaxException) {
             e.printStackTrace()
         }
@@ -56,7 +57,7 @@ internal class SignalingSocketIOClient {
                 socket.emit("create or join", roomName)
             }
             .on(EVENT_CREATED) {
-                listener?.onRoomConnected()
+                listener?.onRoomCreated()
             }
             .on(EVENT_JOIN) {
                 listener?.onParticipantConnected()
@@ -65,13 +66,29 @@ internal class SignalingSocketIOClient {
                 val message = args.firstOrNull() as JSONObject
                 when (message.getString("type")) {
                     TYPE_SEND_OFFER -> {
-                        listener?.onParticipantReceiveOffer()
+                        listener?.onParticipantReceiveOffer(
+                            SessionDescription(
+                                SessionDescription.Type.OFFER,
+                                message.getString("sdp")
+                            )
+                        )
                     }
                     TYPE_SEND_ANSWER -> {
-                        listener?.onRoomGetAnswer()
+                        listener?.onRoomReceiveAnswer(
+                            SessionDescription(
+                                SessionDescription.Type.ANSWER,
+                                message.getString("sdp")
+                            )
+                        )
                     }
                     TYPE_SEND_CANDIDATE -> {
-                        listener?.onExchangeCandidate()
+                        listener?.onExchangeCandidate(
+                            IceCandidate(
+                                message.getString("id"),
+                                message.getInt("label"),
+                                message.getString("candidate")
+                            )
+                        )
                     }
                 }
             }
@@ -79,11 +96,40 @@ internal class SignalingSocketIOClient {
                 listener?.onClose()
             }
             .on(EVENT_LOG) { args ->
-                args.forEach { debug("Socket client server observe $it") }
+//                args.forEach { debug("Socket client server observe $it") }
             }
             .on(Socket.EVENT_DISCONNECT) {
                 debug("Signal socket disconnect")
             }
+    }
+
+    internal fun sendOffer(sdp: SessionDescription?) {
+        with(JSONObject()) {
+            put("type", TYPE_SEND_OFFER)
+            put("sdp", sdp?.description)
+            sendMessage(this)
+        }
+    }
+
+    internal fun sendAnswer(sdp: SessionDescription?) {
+        with(JSONObject()) {
+            put("type", TYPE_SEND_ANSWER)
+            put("sdp", sdp?.description)
+        }.apply {
+            sendMessage(this)
+        }
+    }
+
+    internal fun sendIceCandidate(iceCandidate: IceCandidate) {
+        with(JSONObject()) {
+            put("type", TYPE_SEND_CANDIDATE)
+            put("label", iceCandidate.sdpMLineIndex)
+            put("id", iceCandidate.sdpMid)
+            put("candidate", iceCandidate.sdp)
+        }.apply {
+            debug("onIceCandidate: sending candidate $this")
+            sendMessage(this)
+        }
     }
 
     internal fun disconnect() {
@@ -92,12 +138,20 @@ internal class SignalingSocketIOClient {
         socket.disconnect()
     }
 
+    /**
+     * benefit of socket io to deal with socket
+     */
+    private fun sendMessage(message: Any) {
+        socket.emit("message", message)
+    }
+
+
     internal interface Listener {
-        fun onRoomConnected()
+        fun onRoomCreated()
         fun onParticipantConnected()
-        fun onParticipantReceiveOffer()
-        fun onRoomGetAnswer()
-        fun onExchangeCandidate()
+        fun onParticipantReceiveOffer(sdp: SessionDescription)
+        fun onRoomReceiveAnswer(sdp: SessionDescription)
+        fun onExchangeCandidate(iceCandidate: IceCandidate)
         fun onClose()
     }
 }

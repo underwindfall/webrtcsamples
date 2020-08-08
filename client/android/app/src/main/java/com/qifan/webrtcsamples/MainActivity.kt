@@ -19,9 +19,9 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.qifan.webrtc.extensions.common.* // ktlint-disable no-wildcard-imports
 import com.qifan.webrtcsamples.WebRtcActivity.Companion.startWebRtcActivity
 import com.qifan.webrtcsamples.databinding.ActivityMainBinding
-import com.qifan.webrtcsamples.extensions.common.* // ktlint-disable no-wildcard-imports
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding

@@ -16,11 +16,15 @@
 package com.qifan.webrtc
 
 import android.content.Context
+import com.qifan.webrtc.constants.FPS
+import com.qifan.webrtc.constants.LOCAL_STREAM_ID
+import com.qifan.webrtc.constants.VIDEO_RESOLUTION_HEIGHT
+import com.qifan.webrtc.constants.VIDEO_RESOLUTION_WIDTH
 import com.qifan.webrtc.extensions.common.WeakReferenceProvider
-import com.qifan.webrtc.extensions.rtc.buildRootEglBase
-import com.qifan.webrtc.extensions.rtc.buildVideoCapturer
-import com.qifan.webrtc.extensions.rtc.createJavaAudioDevice
-import com.qifan.webrtc.extensions.rtc.createSurfaceTexture
+import com.qifan.webrtc.extensions.rtc.* // ktlint-disable no-wildcard-imports
+import com.qifan.webrtc.model.MediaViewRender
+import com.qifan.webrtc.model.RTCConstraints
+import com.qifan.webrtc.model.toConstraints
 import org.webrtc.* // ktlint-disable no-wildcard-imports
 
 class PeerConnectionClient(context: Context) {
@@ -40,10 +44,7 @@ class PeerConnectionClient(context: Context) {
 
     private var remoteViewRenderer: SurfaceViewRenderer? = null
 
-    private var mediaConstraints: MediaConstraints = MediaConstraints().apply {
-        mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-        mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-    }
+    private var mediaConstraints: MediaConstraints = RTCConstraints().toConstraints()
 
     private var peerConnectionFactory: PeerConnectionFactory? = null
     private val videoCapturer: CameraVideoCapturer by lazy { context.buildVideoCapturer() }
@@ -51,10 +52,16 @@ class PeerConnectionClient(context: Context) {
     private val surfaceTextureHelper: SurfaceTextureHelper by lazy {
         createSurfaceTexture(sharedContext = rootEglBase.eglBaseContext)
     }
-    private val videoSource: VideoSource? = null
-    private val videoTrack: VideoTrack? = null
-    private val audioSource: AudioSource? = null
-    private val audioTrack: AudioTrack? = null
+    private var localVideoSource: VideoSource? = null
+    private var localVideoTrack: VideoTrack? = null
+
+    //    private var localVideoTrack: VideoTrack? = null
+    private var localAudioSource: AudioSource? = null
+
+    //    private var localAudioTrack: AudioTrack? = null
+    private var remoteVideoTrack: VideoTrack? = null
+    private var remoteAudioTrack: AudioTrack? = null
+    private var remoteMediaStream: MediaStream? = null
 
     init {
         this.context = context
@@ -83,11 +90,113 @@ class PeerConnectionClient(context: Context) {
             .createPeerConnectionFactory()
     }
 
-    internal fun setSurfaceView(
-        localViewRenderer: SurfaceViewRenderer,
-        remoteViewRenderer: SurfaceViewRenderer
+
+    /**
+     * method to setup [SurfaceViewRenderer] provided by webrtc libray
+     * that does the rendering of webrtc frames for us
+     * @param view rendering of webrtc frames
+     */
+    private fun initSurfaceView(view: SurfaceViewRenderer?) {
+        view?.initializeSurfaceView(rootEglBase)
+    }
+
+    private fun setSurfaceViewRender(
+        localView: SurfaceViewRenderer,
+        remoteView: SurfaceViewRenderer
     ) {
-        this.localViewRenderer = localViewRenderer
-        this.remoteViewRenderer = remoteViewRenderer
+
+        localViewRenderer = localView
+        remoteViewRenderer = remoteView
+        initSurfaceView(localViewRenderer)
+        initSurfaceView(remoteViewRenderer)
+    }
+
+    internal fun createLocalPeer(
+        observer: PeerConnection.Observer
+    ) {
+        with(PeerConnection.RTCConfiguration(listOf(defaultStunServer))) {
+            peerConnection = peerConnectionFactory?.createPeerConnection(this, observer)
+        }
+    }
+
+    internal fun setupLocalVideoTrack(mediaViewRender: MediaViewRender) {
+        ui {
+            setSurfaceViewRender(
+                mediaViewRender.localViewRender,
+                mediaViewRender.remoteViewRenderer
+            )
+        }
+        localVideoSource = createVideoSource(peerConnectionFactory!!, videoCapturer.isScreencast)
+        localVideoTrack =
+            createVideoTrack(peerConnectionFactory!!, videoSource = localVideoSource!!)
+        videoCapturer.initialize(
+            surfaceTextureHelper,
+            context,
+            localVideoSource?.capturerObserver
+        )
+        videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS)
+        localVideoTrack?.addSink(localViewRenderer)
+    }
+
+    internal fun setupLocalMediaStream() {
+        val localStream = peerConnectionFactory?.createLocalMediaStream(LOCAL_STREAM_ID)
+        localAudioSource = createAudioSource(peerConnectionFactory!!)
+        val localAudioTrack =
+            createAudioTrack(peerConnectionFactory!!, audioSource = localAudioSource!!)
+        localStream?.addTrack(localVideoTrack)
+        localStream?.addTrack(localAudioTrack)
+        peerConnection?.addStream(localStream)
+    }
+
+    internal fun setRemoteStream(mediaStream: MediaStream?) {
+        this.remoteMediaStream = mediaStream
+        remoteVideoTrack = mediaStream?.videoTracks?.firstOrNull()
+        remoteAudioTrack = mediaStream?.audioTracks?.firstOrNull()
+        remoteVideoTrack?.addSink(remoteViewRenderer)
+    }
+
+    internal fun createOffer(sdpObserver: SdpObserver) {
+        peerConnection?.createOffer(sdpObserver, mediaConstraints)
+    }
+
+    internal fun setLocalSdp(sdpObserver: SdpObserver, sdp: SessionDescription?) {
+        peerConnection?.setLocalDescription(sdpObserver, sdp)
+    }
+
+    internal fun setRemoteSdp(sdpObserver: SdpObserver, sdp: SessionDescription?) {
+        peerConnection?.setRemoteDescription(sdpObserver, sdp)
+    }
+
+    internal fun createAnswer(sdpObserver: SdpObserver) {
+        peerConnection?.createAnswer(sdpObserver, mediaConstraints)
+    }
+
+    internal fun addIceCandidate(iceCandidate: IceCandidate) {
+        peerConnection?.addIceCandidate(iceCandidate)
+    }
+
+    internal fun dispose() {
+        localViewRenderer?.release()
+        localViewRenderer = null
+        remoteViewRenderer?.release()
+        remoteViewRenderer = null
+        try {
+            videoCapturer.stopCapture()
+        } catch (e: InterruptedException) {
+            error("error stop video capturer")
+        }
+        videoCapturer.dispose()
+        surfaceTextureHelper.dispose()
+        localAudioSource?.dispose()
+        localAudioSource = null
+        localVideoSource?.dispose()
+        localVideoSource = null
+        peerConnection?.dispose()
+        peerConnection = null
+        rootEglBase.release()
+        peerConnectionFactory?.dispose()
+        peerConnectionFactory = null
+        PeerConnectionFactory.stopInternalTracingCapture()
+        PeerConnectionFactory.shutdownInternalTracer()
     }
 }

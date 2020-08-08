@@ -43,10 +43,7 @@ val debugImplementation by configurations
 
 dependencies {
     debugImplementation(Deps.leakCanary)
-    implementation(Deps.googleRtc)
-    implementation(Deps.socketIO) {
-        exclude(group = "org.json", module = "json")
-    }
+    implementation(project(path = ":webrtc"))
     implementation(Deps.kotlinLibrary)
     implementation(Deps.appcompat)
     implementation(Deps.coreKtx)

@@ -19,63 +19,51 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.qifan.webrtcsamples.constants.FPS
-import com.qifan.webrtcsamples.constants.LOCAL_STREAM_ID
-import com.qifan.webrtcsamples.constants.VIDEO_RESOLUTION_HEIGHT
-import com.qifan.webrtcsamples.constants.VIDEO_RESOLUTION_WIDTH
+import com.qifan.webrtc.RTCManager
+import com.qifan.webrtc.model.MediaViewRender
 import com.qifan.webrtcsamples.databinding.ActivityWebRtcBinding
-import com.qifan.webrtcsamples.extensions.common.debug
-import com.qifan.webrtcsamples.extensions.common.error
-import com.qifan.webrtcsamples.extensions.common.warn
-import com.qifan.webrtcsamples.extensions.rtc.* // ktlint-disable no-wildcard-imports
-import io.socket.client.IO
-import io.socket.client.Socket
-import org.json.JSONException
-import org.json.JSONObject
-import org.webrtc.* // ktlint-disable no-wildcard-imports
-import org.webrtc.audio.JavaAudioDeviceModule
-import java.net.URISyntaxException
-import kotlin.properties.Delegates.notNull
+import org.webrtc.SurfaceViewRenderer
+import kotlin.properties.Delegates
 
-class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
+class WebRtcActivity : AppCompatActivity(), RTCManager.Listener {
     private lateinit var webRtcBinding: ActivityWebRtcBinding
     private val handUpBtn get() = webRtcBinding.btnHangUp
     private val muteBtn get() = webRtcBinding.btnMute
     private val localViewRender get() = webRtcBinding.rtcViewLocal
     private val remoteViewRender get() = webRtcBinding.rtcViewRemote
-
+    private var rtcManager: RTCManager by Delegates.notNull()
     private lateinit var roomId: String
     private lateinit var ipAddr: String
     private var enabledAudio = true
 
-    private var socket: Socket by notNull()
-    private val defaultStunServer: PeerConnection.IceServer by lazy {
-        PeerConnection.IceServer
-            .builder("stun:stun.l.google.com:19302")
-            .createIceServer()
-    }
-
-    private val rootEglBase: EglBase by lazy { EglBase.create() }
-    private val videoCapturer: CameraVideoCapturer by lazy { buildVideoCapturer() }
-    private var peerConnectionFactory: PeerConnectionFactory? = null
-
-    private val mediaConstraints: MediaConstraints by lazy {
-        MediaConstraints().apply {
-            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-        }
-    }
-
-    // Since we use a real local server to achieve signaling so there is only one peer connection
-    private var peerConnection: PeerConnection? = null
-
-    private val surfaceTextureHelper: SurfaceTextureHelper by lazy {
-        createSurfaceTexture(sharedContext = rootEglBase.eglBaseContext)
-    }
-    private var localVideoSource: VideoSource? = null
-    private var localVideoTrack: VideoTrack? = null
-    private var localAudioSource: AudioSource? = null
-    private var localAudioTrack: AudioTrack? = null
+//    private var socket: Socket by notNull()
+//    private val defaultStunServer: PeerConnection.IceServer by lazy {
+//        PeerConnection.IceServer
+//            .builder("stun:stun.l.google.com:19302")
+//            .createIceServer()
+//    }
+//
+//    private val rootEglBase: EglBase by lazy { EglBase.create() }
+//    private val videoCapturer: CameraVideoCapturer by lazy { buildVideoCapturer() }
+//    private var peerConnectionFactory: PeerConnectionFactory? = null
+//
+//    private val mediaConstraints: MediaConstraints by lazy {
+//        MediaConstraints().apply {
+//            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+//            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
+//        }
+//    }
+//
+//    // Since we use a real local server to achieve signaling so there is only one peer connection
+//    private var peerConnection: PeerConnection? = null
+//
+//    private val surfaceTextureHelper: SurfaceTextureHelper by lazy {
+//        createSurfaceTexture(sharedContext = rootEglBase.eglBaseContext)
+//    }
+//    private var localVideoSource: VideoSource? = null
+//    private var localVideoTrack: VideoTrack? = null
+//    private var localAudioSource: AudioSource? = null
+//    private var localAudioTrack: AudioTrack? = null
 
     companion object {
         private const val ROOM = "ROOM"
@@ -99,29 +87,32 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         webRtcBinding = ActivityWebRtcBinding.inflate(layoutInflater)
         val view = webRtcBinding.root
         setContentView(view)
-        handUpBtn.setOnClickListener { cleanupRtc() }
+        rtcManager = RTCManager(applicationContext)
+        handUpBtn.setOnClickListener {
+            rtcManager.hangup()
+        }
         muteBtn.setOnClickListener {
             enabledAudio = !enabledAudio
             muteBtn.text = if (enabledAudio) "UnMute" else "Mute"
-            localAudioTrack?.setEnabled(enabledAudio)
+//            localAudioTrack?.setEnabled(enabledAudio)
         }
         parseIntents()
         initializeWebRtc()
     }
 
-    override fun onResume() {
-        super.onResume()
-        videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        try {
-            videoCapturer.stopCapture()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
-    }
+//    override fun onResume() {
+//        super.onResume()
+//        videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS)
+//    }
+//
+//    override fun onPause() {
+//        super.onPause()
+//        try {
+//            videoCapturer.stopCapture()
+//        } catch (e: InterruptedException) {
+//            e.printStackTrace()
+//        }
+//    }
 
     private fun parseIntents() {
         val room = intent.getStringExtra(ROOM)
@@ -132,17 +123,30 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
     }
 
     private fun initializeWebRtc() {
-        setupSignaling()
-        setupSurfaceView()
-        buildPeerConnectionFactory()
-        setupLocalVideoTrack()
-        setupPeerConnection()
-        setupLocalMediaStream()
+        rtcManager.call(ipAddr, roomId, this)
     }
 
+    override fun setupLocalMedia(): MediaViewRender {
+        return MediaViewRender(localViewRender, remoteViewRender)
+    }
+
+    override fun hangup() {
+        finish()
+    }
+
+    /* private fun initializeWebRtc() {
+         setupSignaling()
+         setupSurfaceView()
+         buildPeerConnectionFactory()
+         setupLocalVideoTrack()
+         setupPeerConnection()
+         setupLocalMediaStream()
+     }
+
+     */
     /**
      * This step is to register all events listner to do different solutions
-     */
+     *//*
     private fun setupSignaling() {
         val messagePrefix = "connection to signaling server :"
         try {
@@ -294,13 +298,14 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         createVideoSourceAndTrackAttachToView(videoCapturer)
     }
 
+    */
     /**
      * This function is try to initialize [PeerConnection]
      * We pass in a PeerConnection#Observer instance in the factory method,
      * which is notified when a ICE candidate is generated (we need to send that to the other peer).
      * The observer is also notified when the remote MediaStream is available.
      * we will attach a renderer to it just like the local MediaStream
-     */
+     *//*
     private fun setupPeerConnection() {
         // This time we will add a real ice server to build connection between two peers
         with(PeerConnection.RTCConfiguration(listOf(defaultStunServer))) {
@@ -312,9 +317,10 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         }
     }
 
+    */
     /**
      *  use localVideoTrack && localAudioTrack to attach local stream
-     */
+     *//*
     private fun setupLocalMediaStream() {
         val localStream = peerConnectionFactory?.createLocalMediaStream(LOCAL_STREAM_ID)
         localAudioSource = createAudioSource(peerConnectionFactory!!)
@@ -325,11 +331,12 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         peerConnection?.addStream(localStream)
     }
 
+    */
     /**
      * create a VideoSource from the PeerConnectionFactory and VideoTrack then
      * attach our SurfaceViewRenderer to the VideoTrack
      * @param videoCapturer camera capture we got before
-     */
+     *//*
     private fun createVideoSourceAndTrackAttachToView(videoCapturer: CameraVideoCapturer) {
         // use CameraVideoCapturer as local video source
         localVideoSource = createVideoSource(peerConnectionFactory!!, videoCapturer.isScreencast)
@@ -344,19 +351,21 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         localVideoTrack?.addSink(localViewRender)
     }
 
+    */
     /**
      * method to setup [SurfaceViewRenderer] provided by webrtc libray
      * that does the rendering of webrtc frames for us
      * @param view rendering of webrtc frames
-     */
+     *//*
     private fun initSurfaceView(view: SurfaceViewRenderer) {
         view.initializeSurfaceView(rootEglBase)
     }
 
+    */
     /**
      * PeerConnectionFactory is used to create PeerConnection, MediaStream and
      * MediaStreamTrack objects
-     */
+     *//*
     private fun buildPeerConnectionFactory() {
 
         val options = PeerConnectionFactory.Options()
@@ -439,16 +448,18 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         warn("onAddTrack")
     }
 
+    */
     /**
      * benefit of socket io to deal with socket
-     */
+     *//*
     private fun sendMessage(message: Any) {
         socket.emit("message", message)
     }
 
+    */
     /**
      * release relevant sources to avoid memory leak
-     */
+     *//*
     private fun cleanupRtc() {
         socket.emit("leave")
         socket.off()
@@ -472,8 +483,6 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
 
         peerConnection?.dispose()
         peerConnection = null
-        localAudioTrack = null
-        localVideoTrack = null
         peerConnection = null
         rootEglBase.release()
 
@@ -483,5 +492,5 @@ class WebRtcActivity : AppCompatActivity(), PeerConnection.Observer {
         PeerConnectionFactory.shutdownInternalTracer()
 
         finish()
-    }
+    }*/
 }

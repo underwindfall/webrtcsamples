@@ -15,7 +15,8 @@
  */
 package com.qifan.webrtc.extensions.rtc
 
-/*
+
+import com.qifan.webrtc.extensions.common.warn
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 
@@ -81,4 +82,4 @@ inline fun sdpObserver(
     observer: SimpleObserver.() -> Unit
 ): SimpleObserver {
     return SimpleObserver(source).apply(observer)
-}*/
+}
