@@ -15,7 +15,6 @@
  */
 package com.qifan.webrtc.extensions.rtc
 
-
 import com.qifan.webrtc.extensions.common.warn
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription

@@ -55,13 +55,10 @@ class PeerConnectionClient(context: Context) {
     private var localVideoSource: VideoSource? = null
     private var localVideoTrack: VideoTrack? = null
 
-    //    private var localVideoTrack: VideoTrack? = null
     private var localAudioSource: AudioSource? = null
 
-    //    private var localAudioTrack: AudioTrack? = null
     private var remoteVideoTrack: VideoTrack? = null
     private var remoteAudioTrack: AudioTrack? = null
-    private var remoteMediaStream: MediaStream? = null
 
     init {
         this.context = context
@@ -89,7 +86,6 @@ class PeerConnectionClient(context: Context) {
             .setAudioDeviceModule(audioDeviceFactory)
             .createPeerConnectionFactory()
     }
-
 
     /**
      * method to setup [SurfaceViewRenderer] provided by webrtc libray
@@ -149,7 +145,6 @@ class PeerConnectionClient(context: Context) {
     }
 
     internal fun setRemoteStream(mediaStream: MediaStream?) {
-        this.remoteMediaStream = mediaStream
         remoteVideoTrack = mediaStream?.videoTracks?.firstOrNull()
         remoteAudioTrack = mediaStream?.audioTracks?.firstOrNull()
         remoteVideoTrack?.addSink(remoteViewRenderer)
@@ -180,6 +175,7 @@ class PeerConnectionClient(context: Context) {
         localViewRenderer = null
         remoteViewRenderer?.release()
         remoteViewRenderer = null
+
         try {
             videoCapturer.stopCapture()
         } catch (e: InterruptedException) {
@@ -191,6 +187,8 @@ class PeerConnectionClient(context: Context) {
         localAudioSource = null
         localVideoSource?.dispose()
         localVideoSource = null
+        remoteVideoTrack = null
+        remoteAudioTrack = null
         peerConnection?.dispose()
         peerConnection = null
         rootEglBase.release()

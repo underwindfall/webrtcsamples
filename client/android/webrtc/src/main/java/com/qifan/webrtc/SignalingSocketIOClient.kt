@@ -36,7 +36,7 @@ private const val TYPE_SEND_OFFER = "send_offer"
 private const val TYPE_SEND_ANSWER = "send_answer"
 private const val TYPE_SEND_CANDIDATE = "send_candidate"
 
-internal class SignalingSocketIOClient {
+internal class SignalingSocketIOClient(private val enableLogging: Boolean = false) {
     private var socket: Socket by notNull()
     private var listener: Listener? = null
 
@@ -96,7 +96,9 @@ internal class SignalingSocketIOClient {
                 listener?.onClose()
             }
             .on(EVENT_LOG) { args ->
-//                args.forEach { debug("Socket client server observe $it") }
+                if (enableLogging) {
+                    args.forEach { debug("Socket client server observe $it") }
+                }
             }
             .on(Socket.EVENT_DISCONNECT) {
                 debug("Signal socket disconnect")
@@ -144,7 +146,6 @@ internal class SignalingSocketIOClient {
     private fun sendMessage(message: Any) {
         socket.emit("message", message)
     }
-
 
     internal interface Listener {
         fun onRoomCreated()
