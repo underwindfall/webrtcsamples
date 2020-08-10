@@ -23,16 +23,14 @@ import com.qifan.webrtc.constants.FPS
 import com.qifan.webrtc.constants.LOCAL_STREAM_ID
 import com.qifan.webrtc.constants.VIDEO_RESOLUTION_HEIGHT
 import com.qifan.webrtc.constants.VIDEO_RESOLUTION_WIDTH
-import com.qifan.webrtc.extensions.common.WeakReferenceProvider
 import com.qifan.webrtc.extensions.common.debug
-import com.qifan.webrtc.extensions.rtc.*// ktlint-disable no-wildcard-imports
+import com.qifan.webrtc.extensions.rtc.* // ktlint-disable no-wildcard-imports
 import com.qifan.webrtc.model.MediaViewRender
 import com.qifan.webrtc.model.RTCConstraints
 import com.qifan.webrtc.model.toConstraints
-import org.webrtc.*// ktlint-disable no-wildcard-imports
+import org.webrtc.* // ktlint-disable no-wildcard-imports
 
-class PeerConnectionClient(context: Context) {
-    private var context: Context by WeakReferenceProvider()
+class PeerConnectionClient(private val context: Context, mediaViewRender: MediaViewRender?) {
 
     private val rootEglBase: EglBase by lazy { buildRootEglBase() }
 
@@ -44,9 +42,9 @@ class PeerConnectionClient(context: Context) {
 
     private var peerConnection: PeerConnection? = null
 
-    private var localViewRenderer: SurfaceViewRenderer? = null
+    private var localViewRenderer: SurfaceViewRenderer? = mediaViewRender?.localViewRender
 
-    private var remoteViewRenderer: SurfaceViewRenderer? = null
+    private var remoteViewRenderer: SurfaceViewRenderer? = mediaViewRender?.remoteViewRenderer
 
     private var mediaConstraints: MediaConstraints = RTCConstraints().toConstraints()
 
@@ -65,26 +63,23 @@ class PeerConnectionClient(context: Context) {
     private var remoteAudioTrack: AudioTrack? = null
 
     init {
-        this.context = context
-        peerConnectionFactory = createPeerConnectionFactory()
+        setSurfaceViewRender()
     }
 
-    private fun createPeerConnectionFactory(): PeerConnectionFactory {
-        val options = PeerConnectionFactory.Options()
-        val decoderVideoFactory = DefaultVideoDecoderFactory(rootEglBase.eglBaseContext)
-        val encoderFactory = DefaultVideoEncoderFactory(rootEglBase.eglBaseContext, true, true)
-        val audioDeviceFactory = createJavaAudioDevice(context)
-        // load ndk webrtc native library into process
+    internal fun createPeerConnectionFactory() {
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions
                 .builder(context)
                 .setEnableInternalTracer(true)
                 .createInitializationOptions()
         )
-        Logging.enableLogToDebugOutput(Logging.Severity.LS_NONE)
+        val options = PeerConnectionFactory.Options()
+        val decoderVideoFactory = DefaultVideoDecoderFactory(rootEglBase.eglBaseContext)
+        val encoderFactory = DefaultVideoEncoderFactory(rootEglBase.eglBaseContext, true, true)
+        val audioDeviceFactory = createJavaAudioDevice(context)
+        // load ndk webrtc native library into process
         // configure connection factory
-        return PeerConnectionFactory
-            .builder()
+        peerConnectionFactory = PeerConnectionFactory.builder()
             .setOptions(options)
             .setVideoDecoderFactory(decoderVideoFactory)
             .setVideoEncoderFactory(encoderFactory)
@@ -98,16 +93,11 @@ class PeerConnectionClient(context: Context) {
      * @param view rendering of webrtc frames
      */
     private fun initSurfaceView(view: SurfaceViewRenderer?) {
-        view?.initializeSurfaceView(rootEglBase)
+        debug("initSurfaceView")
+        ui { view?.initializeSurfaceView(rootEglBase) }
     }
 
-    private fun setSurfaceViewRender(
-        localView: SurfaceViewRenderer,
-        remoteView: SurfaceViewRenderer
-    ) {
-
-        localViewRenderer = localView
-        remoteViewRenderer = remoteView
+    private fun setSurfaceViewRender() {
         initSurfaceView(localViewRenderer)
         initSurfaceView(remoteViewRenderer)
     }
@@ -115,18 +105,11 @@ class PeerConnectionClient(context: Context) {
     internal fun createLocalPeer(
         observer: PeerConnection.Observer
     ) {
-        with(PeerConnection.RTCConfiguration(listOf(defaultStunServer))) {
-            peerConnection = peerConnectionFactory?.createPeerConnection(this, observer)
-        }
+        val config = PeerConnection.RTCConfiguration(listOf(defaultStunServer))
+        peerConnection = peerConnectionFactory?.createPeerConnection(config, observer)
     }
 
-    internal fun setupLocalVideoTrack(activity: Activity, mediaViewRender: MediaViewRender) {
-        ui {
-            setSurfaceViewRender(
-                mediaViewRender.localViewRender,
-                mediaViewRender.remoteViewRenderer
-            )
-        }
+    internal fun setupLocalVideoTrack(activity: Activity) {
         localVideoSource = createVideoSource(peerConnectionFactory!!, videoCapturer.isScreencast)
         localVideoTrack =
             createVideoTrack(peerConnectionFactory!!, videoSource = localVideoSource!!)
@@ -212,39 +195,37 @@ class PeerConnectionClient(context: Context) {
         }
     }
 
-
     private fun registerResumedActivityListener(callActivity: Activity) {
         callActivity.application.registerActivityLifecycleCallbacks(object :
-            Application.ActivityLifecycleCallbacks {
-            override fun onActivityResumed(activity: Activity) {
-                if (callActivity == activity) {
-                    startCapture()
-                    debug("registerActivityLifecycleCallbacks Resumed")
+                Application.ActivityLifecycleCallbacks {
+                override fun onActivityResumed(activity: Activity) {
+                    if (callActivity == activity) {
+                        startCapture()
+                        debug("registerActivityLifecycleCallbacks Resumed")
+                    }
                 }
-            }
 
-            override fun onActivityPaused(activity: Activity) {
-                if (callActivity == activity) {
-                    stopCapture()
-                    debug("registerActivityLifecycleCallbacks Paused")
+                override fun onActivityPaused(activity: Activity) {
+                    if (callActivity == activity) {
+                        stopCapture()
+                        debug("registerActivityLifecycleCallbacks Paused")
+                    }
                 }
-            }
 
-            override fun onActivityDestroyed(activity: Activity) {
-                if (callActivity == activity) {
-                    activity.application.unregisterActivityLifecycleCallbacks(this)
-                    debug("registerActivityLifecycleCallbacks Destroyed")
+                override fun onActivityDestroyed(activity: Activity) {
+                    if (callActivity == activity) {
+                        activity.application.unregisterActivityLifecycleCallbacks(this)
+                        debug("registerActivityLifecycleCallbacks Destroyed")
+                    }
                 }
-            }
 
-            override fun onActivityStarted(activity: Activity) {}
+                override fun onActivityStarted(activity: Activity) {}
 
+                override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
 
-            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+                override fun onActivityStopped(activity: Activity) {}
 
-            override fun onActivityStopped(activity: Activity) {}
-
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
-        })
+                override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+            })
     }
 }

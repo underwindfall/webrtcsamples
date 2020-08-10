@@ -23,19 +23,17 @@ import com.qifan.webrtc.extensions.rtc.SimpleObserver
 import com.qifan.webrtc.extensions.rtc.async
 import com.qifan.webrtc.extensions.rtc.sdpObserver
 import com.qifan.webrtc.model.MediaViewRender
-import org.webrtc.*// ktlint-disable no-wildcard-imports
+import org.webrtc.* // ktlint-disable no-wildcard-imports
 import kotlin.properties.Delegates.notNull
 
-//TODO async 方式的实现RTC过程
-//TODO Switch Camera/Mute Remote/LocalAudio 问题
-//TODO 从WIFI切换到4G
+// TODO Switch Camera/Mute Remote/LocalAudio 问题
+// TODO 从WIFI切换到4G
 class RTCManager(private val context: Context) :
     SignalingSocketIOClient.Listener,
     PeerConnection.Observer {
     private var signalClientClient: SignalingSocketIOClient? = null
     private var peerConnectionClient: PeerConnectionClient? = null
     private var managerListener: Listener? = null
-    private var isInitiator = false
     private var url: String by notNull()
     private var roomName: String by notNull()
 
@@ -51,11 +49,17 @@ class RTCManager(private val context: Context) :
             is RTCEvent.Idle -> debug("RTC Manager Reset Initial State")
             is RTCEvent.Connecting -> initialize()
             is RTCEvent.ParticipantEvent.CreateOffer -> createLocalOffer()
-            is RTCEvent.ParticipantEvent.SendOfferToParticipant -> signalClientClient?.sendOffer(
-                rtcEvent.sdp
-            )
+            is RTCEvent.ParticipantEvent.SendOfferToParticipant -> async {
+                signalClientClient?.sendOffer(
+                    rtcEvent.sdp
+                )
+            }
             is RTCEvent.ParticipantEvent.SetRemoteSdp -> createRemoteAnswer(rtcEvent.sdp)
-            is RTCEvent.ParticipantEvent.SendAnswer -> signalClientClient?.sendAnswer(rtcEvent.sdp)
+            is RTCEvent.ParticipantEvent.SendAnswer -> async {
+                signalClientClient?.sendAnswer(
+                    rtcEvent.sdp
+                )
+            }
             is RTCEvent.ParticipantEvent.SetLocalSdp -> setLocalSdp(rtcEvent.sdp)
         }
     }
@@ -65,38 +69,39 @@ class RTCManager(private val context: Context) :
         roomName = roomId
         signalClientClient = SignalingSocketIOClient()
         managerListener = listener
+        peerConnectionClient =
+            PeerConnectionClient(context, managerListener?.retrieveMediaViewRender())
         rtcEvent = RTCEvent.Connecting
     }
 
     fun hangup() {
-        async {
-            signalClientClient?.disconnect()
-            onClose()
-        }
+        async { onClose() }
     }
 
     override fun onRoomCreated() {
         debug("Signaling Socket Created")
-        isInitiator = true
     }
 
     override fun onParticipantConnected() {
-        rtcEvent = RTCEvent.ParticipantEvent.CreateOffer
+        async {
+            rtcEvent = RTCEvent.ParticipantEvent.CreateOffer
+        }
     }
 
     override fun onParticipantReceiveOffer(sdp: SessionDescription) {
-        rtcEvent = RTCEvent.ParticipantEvent.SetRemoteSdp(sdp)
+        async { rtcEvent = RTCEvent.ParticipantEvent.SetRemoteSdp(sdp) }
     }
 
     override fun onRoomReceiveAnswer(sdp: SessionDescription) {
-        rtcEvent = RTCEvent.ParticipantEvent.SetLocalSdp(sdp)
+        async { rtcEvent = RTCEvent.ParticipantEvent.SetLocalSdp(sdp) }
     }
 
     override fun onExchangeCandidate(iceCandidate: IceCandidate) {
-        peerConnectionClient?.addIceCandidate(iceCandidate)
+        async { peerConnectionClient?.addIceCandidate(iceCandidate) }
     }
 
     override fun onClose() {
+        signalClientClient?.disconnect()
         signalClientClient = null
         peerConnectionClient?.dispose()
         peerConnectionClient = null
@@ -105,7 +110,7 @@ class RTCManager(private val context: Context) :
     }
 
     override fun onIceCandidate(iceCandidate: IceCandidate) {
-        signalClientClient?.sendIceCandidate(iceCandidate)
+        async { signalClientClient?.sendIceCandidate(iceCandidate) }
     }
 
     override fun onDataChannel(p0: DataChannel?) {
@@ -126,7 +131,7 @@ class RTCManager(private val context: Context) :
 
     override fun onAddStream(mediaStream: MediaStream?) {
         debug("onAddStream mediaStream size is ${mediaStream?.videoTracks?.size}")
-        peerConnectionClient?.setRemoteStream(mediaStream)
+        async { peerConnectionClient?.setRemoteStream(mediaStream) }
     }
 
     override fun onSignalingChange(p0: PeerConnection.SignalingState?) {
@@ -150,73 +155,68 @@ class RTCManager(private val context: Context) :
     }
 
     private fun initialize() {
-        signalClientClient?.connect(url, roomName, this)
-        managerListener?.apply {
-            peerConnectionClient = PeerConnectionClient(context)
-            peerConnectionClient?.setupLocalVideoTrack(
-                retrieveCallActivity(),
-                retrieveMediaViewRender()
-            )
+        async {
+            signalClientClient?.connect(url, roomName, this)
+            peerConnectionClient?.createPeerConnectionFactory()
+            peerConnectionClient?.createLocalPeer(this@RTCManager)
+            peerConnectionClient?.setupLocalVideoTrack(managerListener?.retrieveCallActivity()!!)
+            peerConnectionClient?.setupLocalMediaStream()
         }
-        createLocalPeer()
-        createLocalMediaStream()
-    }
-
-    private fun createLocalPeer() {
-        peerConnectionClient?.createLocalPeer(this)
-    }
-
-    private fun createLocalMediaStream() {
-        peerConnectionClient?.setupLocalMediaStream()
     }
 
     private fun createLocalOffer() {
-        peerConnectionClient?.createOffer(
-            sdpObserver(SimpleObserver.Source.LOCAL_OFFER) {
-                onCreateSuccess { sdp ->
-                    peerConnectionClient?.setLocalSdp(
-                        SimpleObserver(
-                            SimpleObserver.Source.CALL_LOCAL
-                        ),
-                        sdp
-                    )
-                    rtcEvent = RTCEvent.ParticipantEvent.SendOfferToParticipant(sdp)
+        async {
+            peerConnectionClient?.createOffer(
+                sdpObserver(SimpleObserver.Source.LOCAL_OFFER) {
+                    onCreateSuccess { sdp ->
+                        peerConnectionClient?.setLocalSdp(
+                            SimpleObserver(
+                                SimpleObserver.Source.CALL_LOCAL
+                            ),
+                            sdp
+                        )
+                        rtcEvent = RTCEvent.ParticipantEvent.SendOfferToParticipant(sdp)
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 
     private fun createRemoteAnswer(remoteSdp: SessionDescription?) {
-        peerConnectionClient?.setRemoteSdp(
-            SimpleObserver(
-                SimpleObserver.Source.RECEIVER_REMOTE
-            ),
-            remoteSdp
-        )
-        peerConnectionClient?.createAnswer(
-            sdpObserver(
-                SimpleObserver.Source.REMOTE_ANSWER
-            ) {
-                onCreateSuccess { sdp ->
-                    peerConnectionClient?.setLocalSdp(
-                        SimpleObserver(
-                            SimpleObserver.Source.CALL_REMOTE
-                        ),
-                        sdp
-                    )
-                    rtcEvent = RTCEvent.ParticipantEvent.SendAnswer(sdp)
+        async {
+            peerConnectionClient?.setRemoteSdp(
+                SimpleObserver(
+                    SimpleObserver.Source.RECEIVER_REMOTE
+                ),
+                remoteSdp
+            )
+            peerConnectionClient?.createAnswer(
+                sdpObserver(
+                    SimpleObserver.Source.REMOTE_ANSWER
+                ) {
+                    onCreateSuccess { sdp ->
+                        peerConnectionClient?.setLocalSdp(
+                            SimpleObserver(
+                                SimpleObserver.Source.CALL_REMOTE
+                            ),
+                            sdp
+                        )
+                        rtcEvent = RTCEvent.ParticipantEvent.SendAnswer(sdp)
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 
     private fun setLocalSdp(sdp: SessionDescription?) {
-        peerConnectionClient?.setRemoteSdp(
-            SimpleObserver(
-                SimpleObserver.Source.CALL_REMOTE
-            ),
-            sdp
-        )
+        async {
+            peerConnectionClient?.setRemoteSdp(
+                SimpleObserver(
+                    SimpleObserver.Source.CALL_REMOTE
+                ),
+                sdp
+            )
+        }
     }
 
     interface Listener {
