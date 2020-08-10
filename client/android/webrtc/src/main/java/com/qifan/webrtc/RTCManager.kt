@@ -15,6 +15,7 @@
  */
 package com.qifan.webrtc
 
+import android.app.Activity
 import android.content.Context
 import com.qifan.webrtc.extensions.common.debug
 import com.qifan.webrtc.extensions.common.warn
@@ -22,11 +23,10 @@ import com.qifan.webrtc.extensions.rtc.SimpleObserver
 import com.qifan.webrtc.extensions.rtc.async
 import com.qifan.webrtc.extensions.rtc.sdpObserver
 import com.qifan.webrtc.model.MediaViewRender
-import org.webrtc.* // ktlint-disable no-wildcard-imports
+import org.webrtc.*// ktlint-disable no-wildcard-imports
 import kotlin.properties.Delegates.notNull
 
 //TODO async 方式的实现RTC过程
-//TODO onResume/onPause方式
 //TODO Switch Camera/Mute Remote/LocalAudio 问题
 //TODO 从WIFI切换到4G
 class RTCManager(private val context: Context) :
@@ -153,7 +153,10 @@ class RTCManager(private val context: Context) :
         signalClientClient?.connect(url, roomName, this)
         managerListener?.apply {
             peerConnectionClient = PeerConnectionClient(context)
-            peerConnectionClient?.setupLocalVideoTrack(setupLocalMedia())
+            peerConnectionClient?.setupLocalVideoTrack(
+                retrieveCallActivity(),
+                retrieveMediaViewRender()
+            )
         }
         createLocalPeer()
         createLocalMediaStream()
@@ -217,7 +220,8 @@ class RTCManager(private val context: Context) :
     }
 
     interface Listener {
-        fun setupLocalMedia(): MediaViewRender
+        fun retrieveMediaViewRender(): MediaViewRender
+        fun retrieveCallActivity(): Activity
         fun hangup()
     }
 }

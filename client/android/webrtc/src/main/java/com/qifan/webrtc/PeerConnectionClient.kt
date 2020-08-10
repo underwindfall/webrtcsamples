@@ -15,17 +15,21 @@
  */
 package com.qifan.webrtc
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
+import android.os.Bundle
 import com.qifan.webrtc.constants.FPS
 import com.qifan.webrtc.constants.LOCAL_STREAM_ID
 import com.qifan.webrtc.constants.VIDEO_RESOLUTION_HEIGHT
 import com.qifan.webrtc.constants.VIDEO_RESOLUTION_WIDTH
 import com.qifan.webrtc.extensions.common.WeakReferenceProvider
-import com.qifan.webrtc.extensions.rtc.* // ktlint-disable no-wildcard-imports
+import com.qifan.webrtc.extensions.common.debug
+import com.qifan.webrtc.extensions.rtc.*// ktlint-disable no-wildcard-imports
 import com.qifan.webrtc.model.MediaViewRender
 import com.qifan.webrtc.model.RTCConstraints
 import com.qifan.webrtc.model.toConstraints
-import org.webrtc.* // ktlint-disable no-wildcard-imports
+import org.webrtc.*// ktlint-disable no-wildcard-imports
 
 class PeerConnectionClient(context: Context) {
     private var context: Context by WeakReferenceProvider()
@@ -77,6 +81,7 @@ class PeerConnectionClient(context: Context) {
                 .setEnableInternalTracer(true)
                 .createInitializationOptions()
         )
+        Logging.enableLogToDebugOutput(Logging.Severity.LS_NONE)
         // configure connection factory
         return PeerConnectionFactory
             .builder()
@@ -115,7 +120,7 @@ class PeerConnectionClient(context: Context) {
         }
     }
 
-    internal fun setupLocalVideoTrack(mediaViewRender: MediaViewRender) {
+    internal fun setupLocalVideoTrack(activity: Activity, mediaViewRender: MediaViewRender) {
         ui {
             setSurfaceViewRender(
                 mediaViewRender.localViewRender,
@@ -130,8 +135,9 @@ class PeerConnectionClient(context: Context) {
             context,
             localVideoSource?.capturerObserver
         )
-        videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS)
+        startCapture()
         localVideoTrack?.addSink(localViewRenderer)
+        registerResumedActivityListener(activity)
     }
 
     internal fun setupLocalMediaStream() {
@@ -176,11 +182,7 @@ class PeerConnectionClient(context: Context) {
         remoteViewRenderer?.release()
         remoteViewRenderer = null
 
-        try {
-            videoCapturer.stopCapture()
-        } catch (e: InterruptedException) {
-            error("error stop video capturer")
-        }
+        stopCapture()
         videoCapturer.dispose()
         surfaceTextureHelper.dispose()
         localAudioSource?.dispose()
@@ -196,5 +198,53 @@ class PeerConnectionClient(context: Context) {
         peerConnectionFactory = null
         PeerConnectionFactory.stopInternalTracingCapture()
         PeerConnectionFactory.shutdownInternalTracer()
+    }
+
+    private fun startCapture() {
+        videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS)
+    }
+
+    private fun stopCapture() {
+        try {
+            videoCapturer.stopCapture()
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
+    }
+
+
+    private fun registerResumedActivityListener(callActivity: Activity) {
+        callActivity.application.registerActivityLifecycleCallbacks(object :
+            Application.ActivityLifecycleCallbacks {
+            override fun onActivityResumed(activity: Activity) {
+                if (callActivity == activity) {
+                    startCapture()
+                    debug("registerActivityLifecycleCallbacks Resumed")
+                }
+            }
+
+            override fun onActivityPaused(activity: Activity) {
+                if (callActivity == activity) {
+                    stopCapture()
+                    debug("registerActivityLifecycleCallbacks Paused")
+                }
+            }
+
+            override fun onActivityDestroyed(activity: Activity) {
+                if (callActivity == activity) {
+                    activity.application.unregisterActivityLifecycleCallbacks(this)
+                    debug("registerActivityLifecycleCallbacks Destroyed")
+                }
+            }
+
+            override fun onActivityStarted(activity: Activity) {}
+
+
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+
+            override fun onActivityStopped(activity: Activity) {}
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+        })
     }
 }

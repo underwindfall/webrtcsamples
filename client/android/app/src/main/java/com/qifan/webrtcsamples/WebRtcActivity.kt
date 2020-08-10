@@ -126,8 +126,12 @@ class WebRtcActivity : AppCompatActivity(), RTCManager.Listener {
         rtcManager.call(ipAddr, roomId, this)
     }
 
-    override fun setupLocalMedia(): MediaViewRender {
+    override fun retrieveMediaViewRender(): MediaViewRender {
         return MediaViewRender(localViewRender, remoteViewRender)
+    }
+
+    override fun retrieveCallActivity(): Activity {
+        return this
     }
 
     override fun hangup() {
