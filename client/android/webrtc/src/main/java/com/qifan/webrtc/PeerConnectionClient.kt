@@ -27,6 +27,7 @@ import com.qifan.webrtc.extensions.common.debug
 import com.qifan.webrtc.extensions.rtc.* // ktlint-disable no-wildcard-imports
 import com.qifan.webrtc.model.MediaViewRender
 import com.qifan.webrtc.model.RTCConstraints
+import com.qifan.webrtc.model.addIceRestart
 import com.qifan.webrtc.model.toConstraints
 import org.webrtc.* // ktlint-disable no-wildcard-imports
 
@@ -181,6 +182,11 @@ class PeerConnectionClient(private val context: Context, mediaViewRender: MediaV
         peerConnectionFactory = null
         PeerConnectionFactory.stopInternalTracingCapture()
         PeerConnectionFactory.shutdownInternalTracer()
+    }
+
+    internal fun restartIce(action: (MediaConstraints) -> Unit) {
+        mediaConstraints.addIceRestart()
+        action(mediaConstraints)
     }
 
     private fun startCapture() {

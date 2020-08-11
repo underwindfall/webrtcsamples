@@ -24,10 +24,10 @@ import com.qifan.webrtc.extensions.rtc.async
 import com.qifan.webrtc.extensions.rtc.sdpObserver
 import com.qifan.webrtc.model.MediaViewRender
 import org.webrtc.* // ktlint-disable no-wildcard-imports
+import org.webrtc.PeerConnection.IceConnectionState.* // ktlint-disable no-wildcard-imports
 import kotlin.properties.Delegates.notNull
 
 // TODO Switch Camera/Mute Remote/LocalAudio 问题
-// TODO 从WIFI切换到4G
 class RTCManager(private val context: Context) :
     SignalingSocketIOClient.Listener,
     PeerConnection.Observer {
@@ -83,9 +83,7 @@ class RTCManager(private val context: Context) :
     }
 
     override fun onParticipantConnected() {
-        async {
-            rtcEvent = RTCEvent.ParticipantEvent.CreateOffer
-        }
+        async { rtcEvent = RTCEvent.ParticipantEvent.CreateOffer }
     }
 
     override fun onParticipantReceiveOffer(sdp: SessionDescription) {
@@ -121,8 +119,30 @@ class RTCManager(private val context: Context) :
         warn("onIceConnectionReceivingChange")
     }
 
-    override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {
-        warn("onIceConnectionChange $p0")
+    override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
+        when (state) {
+            NEW,
+            CHECKING,
+            CONNECTED,
+            COMPLETED,
+            DISCONNECTED,
+            CLOSED -> warn("onIceConnectionChange $state")
+            FAILED -> async {
+                peerConnectionClient?.restartIce {
+                    peerConnectionClient?.createOffer(
+                        sdpObserver(SimpleObserver.Source.LOCAL_OFFER) {
+                            onCreateSuccess { sdp ->
+                                peerConnectionClient?.setLocalSdp(
+                                    SimpleObserver(SimpleObserver.Source.CALL_LOCAL),
+                                    sdp
+                                )
+                                rtcEvent = RTCEvent.ParticipantEvent.SendOfferToParticipant(sdp)
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
 
     override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {
@@ -170,9 +190,7 @@ class RTCManager(private val context: Context) :
                 sdpObserver(SimpleObserver.Source.LOCAL_OFFER) {
                     onCreateSuccess { sdp ->
                         peerConnectionClient?.setLocalSdp(
-                            SimpleObserver(
-                                SimpleObserver.Source.CALL_LOCAL
-                            ),
+                            SimpleObserver(SimpleObserver.Source.CALL_LOCAL),
                             sdp
                         )
                         rtcEvent = RTCEvent.ParticipantEvent.SendOfferToParticipant(sdp)
@@ -185,15 +203,11 @@ class RTCManager(private val context: Context) :
     private fun createRemoteAnswer(remoteSdp: SessionDescription?) {
         async {
             peerConnectionClient?.setRemoteSdp(
-                SimpleObserver(
-                    SimpleObserver.Source.RECEIVER_REMOTE
-                ),
+                SimpleObserver(SimpleObserver.Source.RECEIVER_REMOTE),
                 remoteSdp
             )
             peerConnectionClient?.createAnswer(
-                sdpObserver(
-                    SimpleObserver.Source.REMOTE_ANSWER
-                ) {
+                sdpObserver(SimpleObserver.Source.REMOTE_ANSWER) {
                     onCreateSuccess { sdp ->
                         peerConnectionClient?.setLocalSdp(
                             SimpleObserver(
@@ -211,9 +225,7 @@ class RTCManager(private val context: Context) :
     private fun setLocalSdp(sdp: SessionDescription?) {
         async {
             peerConnectionClient?.setRemoteSdp(
-                SimpleObserver(
-                    SimpleObserver.Source.CALL_REMOTE
-                ),
+                SimpleObserver(SimpleObserver.Source.CALL_REMOTE),
                 sdp
             )
         }

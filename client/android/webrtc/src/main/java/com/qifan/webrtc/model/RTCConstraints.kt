@@ -34,3 +34,7 @@ internal fun RTCConstraints.toConstraints(): MediaConstraints {
         mandatory.add(video)
     }
 }
+
+internal fun MediaConstraints.addIceRestart() {
+    mandatory.add(MediaConstraints.KeyValuePair("IceRestart", "true"))
+}
