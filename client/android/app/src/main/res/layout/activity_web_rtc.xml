@@ -31,16 +31,41 @@
         android:layout_height="wrap_content"
         android:text="@string/remote_btn_hangup"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btn_mute"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/btn_mute"
+        android:id="@+id/btn_switch_camera"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/remote_btn_mute"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:text="@string/remote_btn_switch"
+        app:layout_constraintBottom_toTopOf="@+id/btn_mute_micro"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btn_hang_up" />
+        app:layout_constraintTop_toTopOf="@+id/guideline" />
+
+    <Button
+        android:id="@+id/btn_mute_micro"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_mute_micro"
+        app:layout_constraintBottom_toTopOf="@+id/btn_mute_speaker"
+        app:layout_constraintEnd_toEndOf="@+id/btn_switch_camera"
+        app:layout_constraintTop_toBottomOf="@+id/btn_switch_camera" />
+
+    <Button
+        android:id="@+id/btn_mute_speaker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/remote_btn_mute_speaker"
+        app:layout_constraintBottom_toTopOf="@+id/btn_hang_up"
+        app:layout_constraintEnd_toEndOf="@+id/btn_mute_micro"
+        app:layout_constraintTop_toBottomOf="@+id/btn_mute_micro" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.5" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

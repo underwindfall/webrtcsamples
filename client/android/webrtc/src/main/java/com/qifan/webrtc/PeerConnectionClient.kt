@@ -62,6 +62,8 @@ class PeerConnectionClient(private val context: Context, mediaViewRender: MediaV
 
     private var remoteVideoTrack: VideoTrack? = null
     private var remoteAudioTrack: AudioTrack? = null
+    private var enabledRemoteAudio = false
+    private var enabledLocalAudio = false
 
     init {
         setSurfaceViewRender()
@@ -187,6 +189,22 @@ class PeerConnectionClient(private val context: Context, mediaViewRender: MediaV
     internal fun restartIce(action: (MediaConstraints) -> Unit) {
         mediaConstraints.addIceRestart()
         action(mediaConstraints)
+    }
+
+    internal fun switchCamera() {
+        videoCapturer.switchCamera(null)
+    }
+
+    internal fun changeRemoteAudio(): Boolean {
+        enabledRemoteAudio = enabledRemoteAudio.not()
+        remoteAudioTrack?.setEnabled(enabledRemoteAudio)
+        return enabledRemoteAudio
+    }
+
+    internal fun changeLocalAudio(): Boolean {
+        enabledLocalAudio = enabledLocalAudio.not()
+        localVideoTrack?.setEnabled(enabledLocalAudio)
+        return enabledLocalAudio
     }
 
     private fun startCapture() {

@@ -27,7 +27,6 @@ import org.webrtc.* // ktlint-disable no-wildcard-imports
 import org.webrtc.PeerConnection.IceConnectionState.* // ktlint-disable no-wildcard-imports
 import kotlin.properties.Delegates.notNull
 
-// TODO Switch Camera/Mute Remote/LocalAudio 问题
 class RTCManager(private val context: Context) :
     SignalingSocketIOClient.Listener,
     PeerConnection.Observer {
@@ -78,6 +77,26 @@ class RTCManager(private val context: Context) :
         async { onClose() }
     }
 
+    fun switchCam() {
+        async { peerConnectionClient?.switchCamera() }
+    }
+
+    fun changeMicro() {
+        async {
+            peerConnectionClient?.changeLocalAudio()?.apply {
+                managerListener?.onLocalAudioChange(this)
+            }
+        }
+    }
+
+    fun changeSpeaker() {
+        async {
+            peerConnectionClient?.changeRemoteAudio()?.apply {
+                managerListener?.onRemoteAudioChange(this)
+            }
+        }
+    }
+
     override fun onRoomCreated() {
         debug("Signaling Socket Created")
     }
@@ -103,7 +122,7 @@ class RTCManager(private val context: Context) :
         signalClientClient = null
         peerConnectionClient?.dispose()
         peerConnectionClient = null
-        managerListener?.hangup()
+        managerListener?.cleanup()
         managerListener = null
     }
 
@@ -127,21 +146,7 @@ class RTCManager(private val context: Context) :
             COMPLETED,
             DISCONNECTED,
             CLOSED -> warn("onIceConnectionChange $state")
-            FAILED -> async {
-                peerConnectionClient?.restartIce {
-                    peerConnectionClient?.createOffer(
-                        sdpObserver(SimpleObserver.Source.LOCAL_OFFER) {
-                            onCreateSuccess { sdp ->
-                                peerConnectionClient?.setLocalSdp(
-                                    SimpleObserver(SimpleObserver.Source.CALL_LOCAL),
-                                    sdp
-                                )
-                                rtcEvent = RTCEvent.ParticipantEvent.SendOfferToParticipant(sdp)
-                            }
-                        }
-                    )
-                }
-            }
+            FAILED -> restartIce()
         }
     }
 
@@ -231,9 +236,29 @@ class RTCManager(private val context: Context) :
         }
     }
 
+    private fun restartIce() {
+        async {
+            peerConnectionClient?.restartIce {
+                peerConnectionClient?.createOffer(
+                    sdpObserver(SimpleObserver.Source.LOCAL_OFFER) {
+                        onCreateSuccess { sdp ->
+                            peerConnectionClient?.setLocalSdp(
+                                SimpleObserver(SimpleObserver.Source.CALL_LOCAL),
+                                sdp
+                            )
+                            rtcEvent = RTCEvent.ParticipantEvent.SendOfferToParticipant(sdp)
+                        }
+                    }
+                )
+            }
+        }
+    }
+
     interface Listener {
         fun retrieveMediaViewRender(): MediaViewRender
         fun retrieveCallActivity(): Activity
-        fun hangup()
+        fun cleanup()
+        fun onRemoteAudioChange(enable: Boolean)
+        fun onLocalAudioChange(enable: Boolean)
     }
 }

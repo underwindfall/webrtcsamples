@@ -1,6 +1,6 @@
 object Versions {
     const val android_plugin = "4.0.1"
-    const val kotlin = "1.3.72"
+    const val kotlin = "1.4.0"
     const val appcompat = "1.1.0"
     const val core = "1.3.0"
 }

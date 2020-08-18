@@ -4,7 +4,10 @@
     <string name="room_id_hint">Input your room ID</string>
     <string name="confirm">Confirm</string>
     <string name="input_parameter_warning">To make call we need to your local ip address and roomId you want to enter in</string>
-    <string name="remote_btn_mute">Mute</string>
-    <string name="remote_btn_un_mute">UnMute</string>
+    <string name="btn_mute_micro">Mute Micro</string>
+    <string name="btn_un_mute_micro">UnMute Micro</string>
+    <string name="remote_btn_mute_speaker">Mute Speaker</string>
+    <string name="remote_btn_un_mute_spear">UnMute Speaker</string>
     <string name="remote_btn_hangup">Hang Up</string>
+    <string name="remote_btn_switch">switch</string>
 </resources>
