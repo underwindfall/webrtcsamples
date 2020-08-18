@@ -1,6 +1,6 @@
 'use strict';
 
-const TYPE_CREATE_OFFER = "create_offer"
+//const TYPE_CREATE_OFFER = "create_offer"
 const TYPE_SEND_OFFER = "send_offer"
 const TYPE_SEND_ANSWER = "send_answer"
 const TYPE_SEND_CANDIDATE = "send_candidate"
@@ -53,6 +53,7 @@ socket.on('join', function (room) {
   console.log('Another peer made a request to join room ' + room);
   console.log('This peer is the initiator of room ' + room + '!');
   isChannelReady = true;
+  doCall();
 });
 
 socket.on('joined', function (room) {
@@ -69,9 +70,9 @@ socket.on('message', function (message) {
   console.log('Client received message:', message);
 
   switch (message.type) {
-    case TYPE_CREATE_OFFER:
-      doCall();
-      break;
+    // case TYPE_CREATE_OFFER:
+    //   doCall();
+    //   break;
     case TYPE_SEND_OFFER:
       console.log("Process TYPE_SEND_OFFER message", message);
       pc.setRemoteDescription(new RTCSessionDescription({
@@ -131,7 +132,7 @@ function gotStream(stream) {
   console.log('Adding local stream.');
   localStream = stream;
   localVideo.srcObject = stream;
-  sendMessage({ type: TYPE_CREATE_OFFER });
+  //sendMessage({ type: TYPE_CREATE_OFFER });
   maybeStart();
 }
 
@@ -192,9 +193,9 @@ function handleCreateOfferError(event) {
 
 function doCall() {
   console.log('Sending offer to peer isInitiator', isInitiator, isChannelReady);
-  if (isInitiator && isChannelReady) {
+ // if (isInitiator && isChannelReady) {
     pc.createOffer(setLocalAndSendMessageOffer, handleCreateOfferError);
-  }
+ // }
 }
 
 function doAnswer() {
