@@ -25,5 +25,5 @@ npm run start
 ## Project Pluse
 - Server (done)
 - Web (done)
-- Android (WIP)
+- Android (done)
 - iOS (WIP)
