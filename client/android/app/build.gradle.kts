@@ -48,6 +48,7 @@ dependencies {
     implementation(Deps.appcompat)
     implementation(Deps.coreKtx)
     implementation(Deps.constraintLayout)
+    implementation(Deps.powerPermission)
     testImplementation(Deps.junit)
     androidTestImplementation(Deps.junitExt)
     androidTestImplementation(Deps.espresso)

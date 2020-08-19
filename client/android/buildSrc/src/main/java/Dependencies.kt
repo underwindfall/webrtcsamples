@@ -32,6 +32,8 @@ object Deps {
 
     const val googleRtc = "org.webrtc:google-webrtc:1.0.30039"
 
+    const val powerPermission = "com.qifan.powerpermission:powerpermission:1.3.0"
+
     const val junit = "junit:junit:4.13"
     const val junitExt = "androidx.test.ext:junit:1.1.1"
     const val espresso = "androidx.test.espresso:espresso-core:3.2.0"
