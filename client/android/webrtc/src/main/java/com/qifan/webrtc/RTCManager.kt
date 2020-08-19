@@ -22,7 +22,8 @@ import com.qifan.webrtc.extensions.common.warn
 import com.qifan.webrtc.extensions.rtc.SimpleObserver
 import com.qifan.webrtc.extensions.rtc.async
 import com.qifan.webrtc.extensions.rtc.sdpObserver
-import com.qifan.webrtc.model.MediaViewRender
+import com.qifan.webrtc.model.CallSource
+import com.qifan.webrtc.model.toConstraints
 import org.webrtc.* // ktlint-disable no-wildcard-imports
 import org.webrtc.PeerConnection.IceConnectionState.* // ktlint-disable no-wildcard-imports
 import kotlin.properties.Delegates.notNull
@@ -35,6 +36,8 @@ class RTCManager(private val context: Context) :
     private var managerListener: Listener? = null
     private var url: String by notNull()
     private var roomName: String by notNull()
+    private var mediaConstraints: MediaConstraints by notNull()
+    private var activity: Activity by notNull()
 
     private var rtcEvent: RTCEvent = RTCEvent.Idle
         set(value) {
@@ -48,28 +51,21 @@ class RTCManager(private val context: Context) :
             is RTCEvent.Idle -> debug("RTC Manager Reset Initial State")
             is RTCEvent.Connecting -> initialize()
             is RTCEvent.ParticipantEvent.CreateOffer -> createLocalOffer()
-            is RTCEvent.ParticipantEvent.SendOfferToParticipant -> async {
-                signalClientClient?.sendOffer(
-                    rtcEvent.sdp
-                )
-            }
+            is RTCEvent.ParticipantEvent.SendOfferToParticipant -> sendOffer(rtcEvent.sdp)
             is RTCEvent.ParticipantEvent.SetRemoteSdp -> createRemoteAnswer(rtcEvent.sdp)
-            is RTCEvent.ParticipantEvent.SendAnswer -> async {
-                signalClientClient?.sendAnswer(
-                    rtcEvent.sdp
-                )
-            }
+            is RTCEvent.ParticipantEvent.SendAnswer -> sendAnswer(rtcEvent.sdp)
             is RTCEvent.ParticipantEvent.SetLocalSdp -> setLocalSdp(rtcEvent.sdp)
         }
     }
 
-    fun call(identity: String, roomId: String, listener: Listener) {
-        url = identity
-        roomName = roomId
+    fun call(callSource: CallSource, listener: Listener) {
+        url = callSource.identity
+        roomName = callSource.roomId
+        mediaConstraints = callSource.rtcConstraints.toConstraints()
+        activity = callSource.activity
         signalClientClient = SignalingSocketIOClient()
         managerListener = listener
-        peerConnectionClient =
-            PeerConnectionClient(context, managerListener?.retrieveMediaViewRender())
+        peerConnectionClient = PeerConnectionClient(context, callSource.mediaViewRender)
         rtcEvent = RTCEvent.Connecting
     }
 
@@ -184,7 +180,7 @@ class RTCManager(private val context: Context) :
             signalClientClient?.connect(url, roomName, this)
             peerConnectionClient?.createPeerConnectionFactory()
             peerConnectionClient?.createLocalPeer(this@RTCManager)
-            peerConnectionClient?.setupLocalVideoTrack(managerListener?.retrieveCallActivity()!!)
+            peerConnectionClient?.setupLocalVideoTrack(activity)
             peerConnectionClient?.setupLocalMediaStream()
         }
     }
@@ -200,7 +196,8 @@ class RTCManager(private val context: Context) :
                         )
                         rtcEvent = RTCEvent.ParticipantEvent.SendOfferToParticipant(sdp)
                     }
-                }
+                },
+                mediaConstraints
             )
         }
     }
@@ -222,7 +219,8 @@ class RTCManager(private val context: Context) :
                         )
                         rtcEvent = RTCEvent.ParticipantEvent.SendAnswer(sdp)
                     }
-                }
+                },
+                mediaConstraints
             )
         }
     }
@@ -236,27 +234,22 @@ class RTCManager(private val context: Context) :
         }
     }
 
+    private fun sendOffer(sdp: SessionDescription?) {
+        async { signalClientClient?.sendOffer(sdp) }
+    }
+
+    private fun sendAnswer(sdp: SessionDescription?) {
+        async { signalClientClient?.sendAnswer(sdp) }
+    }
+
     private fun restartIce() {
         async {
-            peerConnectionClient?.restartIce {
-                peerConnectionClient?.createOffer(
-                    sdpObserver(SimpleObserver.Source.LOCAL_OFFER) {
-                        onCreateSuccess { sdp ->
-                            peerConnectionClient?.setLocalSdp(
-                                SimpleObserver(SimpleObserver.Source.CALL_LOCAL),
-                                sdp
-                            )
-                            rtcEvent = RTCEvent.ParticipantEvent.SendOfferToParticipant(sdp)
-                        }
-                    }
-                )
-            }
+            peerConnectionClient?.restartIce(mediaConstraints)
+            rtcEvent = RTCEvent.ParticipantEvent.CreateOffer
         }
     }
 
     interface Listener {
-        fun retrieveMediaViewRender(): MediaViewRender
-        fun retrieveCallActivity(): Activity
         fun cleanup()
         fun onRemoteAudioChange(enable: Boolean)
         fun onLocalAudioChange(enable: Boolean)

@@ -17,7 +17,7 @@ package com.qifan.webrtc.model
 
 import org.webrtc.MediaConstraints
 
-internal data class RTCConstraints(
+data class RTCConstraints(
     val audio: MediaConstraints.KeyValuePair = MediaConstraints.KeyValuePair(
         "OfferToReceiveAudio",
         "true"
@@ -35,6 +35,6 @@ internal fun RTCConstraints.toConstraints(): MediaConstraints {
     }
 }
 
-internal fun MediaConstraints.addIceRestart() {
-    mandatory.add(MediaConstraints.KeyValuePair("IceRestart", "true"))
+internal fun MediaConstraints.addIceRestart(): MediaConstraints {
+    return apply { mandatory.add(MediaConstraints.KeyValuePair("IceRestart", "true")) }
 }

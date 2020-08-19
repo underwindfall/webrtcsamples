@@ -26,9 +26,7 @@ import com.qifan.webrtc.constants.VIDEO_RESOLUTION_WIDTH
 import com.qifan.webrtc.extensions.common.debug
 import com.qifan.webrtc.extensions.rtc.* // ktlint-disable no-wildcard-imports
 import com.qifan.webrtc.model.MediaViewRender
-import com.qifan.webrtc.model.RTCConstraints
 import com.qifan.webrtc.model.addIceRestart
-import com.qifan.webrtc.model.toConstraints
 import org.webrtc.* // ktlint-disable no-wildcard-imports
 
 class PeerConnectionClient(private val context: Context, mediaViewRender: MediaViewRender?) {
@@ -46,8 +44,6 @@ class PeerConnectionClient(private val context: Context, mediaViewRender: MediaV
     private var localViewRenderer: SurfaceViewRenderer? = mediaViewRender?.localViewRender
 
     private var remoteViewRenderer: SurfaceViewRenderer? = mediaViewRender?.remoteViewRenderer
-
-    private var mediaConstraints: MediaConstraints = RTCConstraints().toConstraints()
 
     private var peerConnectionFactory: PeerConnectionFactory? = null
     private val videoCapturer: CameraVideoCapturer by lazy { context.buildVideoCapturer() }
@@ -142,7 +138,7 @@ class PeerConnectionClient(private val context: Context, mediaViewRender: MediaV
         remoteVideoTrack?.addSink(remoteViewRenderer)
     }
 
-    internal fun createOffer(sdpObserver: SdpObserver) {
+    internal fun createOffer(sdpObserver: SdpObserver, mediaConstraints: MediaConstraints) {
         peerConnection?.createOffer(sdpObserver, mediaConstraints)
     }
 
@@ -154,7 +150,7 @@ class PeerConnectionClient(private val context: Context, mediaViewRender: MediaV
         peerConnection?.setRemoteDescription(sdpObserver, sdp)
     }
 
-    internal fun createAnswer(sdpObserver: SdpObserver) {
+    internal fun createAnswer(sdpObserver: SdpObserver, mediaConstraints: MediaConstraints) {
         peerConnection?.createAnswer(sdpObserver, mediaConstraints)
     }
 
@@ -186,9 +182,8 @@ class PeerConnectionClient(private val context: Context, mediaViewRender: MediaV
         PeerConnectionFactory.shutdownInternalTracer()
     }
 
-    internal fun restartIce(action: (MediaConstraints) -> Unit) {
-        mediaConstraints.addIceRestart()
-        action(mediaConstraints)
+    internal fun restartIce(mediaConstraints: MediaConstraints): MediaConstraints {
+        return mediaConstraints.addIceRestart()
     }
 
     internal fun switchCamera() {

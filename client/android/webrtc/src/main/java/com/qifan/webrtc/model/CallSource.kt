@@ -15,8 +15,12 @@
  */
 package com.qifan.webrtc.model
 
-import org.webrtc.MediaConstraints
+import android.app.Activity
 
 data class CallSource(
-    val mediaConstraints: MediaConstraints
+    val activity: Activity,
+    val identity: String,
+    val roomId: String,
+    val mediaViewRender: MediaViewRender,
+    val rtcConstraints: RTCConstraints
 )

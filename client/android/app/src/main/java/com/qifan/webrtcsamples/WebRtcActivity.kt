@@ -20,7 +20,9 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.qifan.webrtc.RTCManager
+import com.qifan.webrtc.model.CallSource
 import com.qifan.webrtc.model.MediaViewRender
+import com.qifan.webrtc.model.RTCConstraints
 import com.qifan.webrtcsamples.databinding.ActivityWebRtcBinding
 import kotlin.properties.Delegates
 
@@ -65,7 +67,9 @@ class WebRtcActivity : AppCompatActivity(), RTCManager.Listener {
         muteSpeakerBtn.setOnClickListener {
             rtcManager.changeSpeaker()
         }
-        switchCameraBtn.setOnClickListener { rtcManager.switchCam() }
+        switchCameraBtn.setOnClickListener {
+            rtcManager.switchCam()
+        }
         parseIntents()
         initializeWebRtc()
     }
@@ -79,15 +83,14 @@ class WebRtcActivity : AppCompatActivity(), RTCManager.Listener {
     }
 
     private fun initializeWebRtc() {
-        rtcManager.call(ipAddr, roomId, this)
-    }
-
-    override fun retrieveMediaViewRender(): MediaViewRender {
-        return MediaViewRender(localViewRender, remoteViewRender)
-    }
-
-    override fun retrieveCallActivity(): Activity {
-        return this
+        val callSource = CallSource(
+            activity = this,
+            identity = ipAddr,
+            roomId = roomId,
+            mediaViewRender = MediaViewRender(localViewRender, remoteViewRender),
+            rtcConstraints = RTCConstraints()
+        )
+        rtcManager.call(callSource, this)
     }
 
     override fun cleanup() {
@@ -95,14 +98,10 @@ class WebRtcActivity : AppCompatActivity(), RTCManager.Listener {
     }
 
     override fun onLocalAudioChange(enable: Boolean) {
-        muteMicroBtn.setText(
-            if (enable) R.string.btn_un_mute_micro else R.string.btn_mute_micro
-        )
+        muteMicroBtn.setText(if (enable) R.string.btn_un_mute_micro else R.string.btn_mute_micro)
     }
 
     override fun onRemoteAudioChange(enable: Boolean) {
-        muteSpeakerBtn.setText(
-            if (enable) R.string.remote_btn_un_mute_spear else R.string.remote_btn_mute_speaker
-        )
+        muteSpeakerBtn.setText(if (enable) R.string.remote_btn_un_mute_spear else R.string.remote_btn_mute_speaker)
     }
 }
