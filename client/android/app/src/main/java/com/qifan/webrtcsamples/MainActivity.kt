@@ -15,11 +15,19 @@
  */
 package com.qifan.webrtcsamples
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.qifan.webrtc.extensions.common.* // ktlint-disable no-wildcard-imports
+import com.qifan.powerpermission.askPermissions
+import com.qifan.powerpermission.data.PermissionResult
+import com.qifan.powerpermission.data.hasAllGranted
+import com.qifan.powerpermission.data.hasPermanentDenied
+import com.qifan.powerpermission.rationale.createDialogRationale
+import com.qifan.powerpermission.rationale.delegate.RationaleDelegate
+import com.qifan.webrtc.extensions.common.AUDIO_PERMISSION
+import com.qifan.webrtc.extensions.common.CAMERA_PERMISSION
+import com.qifan.webrtc.extensions.common.MODIFY_AUDIO_PERMISSION
 import com.qifan.webrtcsamples.WebRtcActivity.Companion.startWebRtcActivity
 import com.qifan.webrtcsamples.databinding.ActivityMainBinding
 
@@ -27,7 +35,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val editRoomIdText get() = binding.editRoomId
     private val editIpText get() = binding.editIpAddr
+    private val dialogRationaleDelegate: RationaleDelegate by lazy {
+        createDialogRationale(
+            dialogTitle = R.string.permission_dialog_title,
+            requiredPermissions = listOf(
+                CAMERA_PERMISSION,
+                AUDIO_PERMISSION,
+                MODIFY_AUDIO_PERMISSION
+            ),
+            message = getString(R.string.permission_dialog_message),
+            negativeText = getString(R.string.permission_dialog_deny)
+        )
+    }
 
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -45,76 +66,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions() {
-        if (permissionGranted(
+        askPermissions(
             CAMERA_PERMISSION,
             AUDIO_PERMISSION,
-            MODIFY_AUDIO_PERMISSION
-        )
-        ) {
-            startWebRtcActivity(
-                roomId = editRoomIdText.text.toString(),
-                ipAddr = editIpText.text.toString()
-            )
-        } else {
-            requirePermissions()
-        }
-    }
-
-    private fun requirePermissions() {
-        if (shouldShowRequestPermissionRationaleCompat(
-            CAMERA_PERMISSION,
-            AUDIO_PERMISSION,
-            MODIFY_AUDIO_PERMISSION
-        )
-        ) {
-            showPermissionRationaleDialog()
-        } else {
-            requestPermissionNow()
-        }
-    }
-
-    private fun showPermissionRationaleDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("WebRtc Permissions  Required")
-            .setMessage("This app need WebRtc Permissions to work well")
-            .setPositiveButton("Grant") { dialog, _ ->
-                dialog.dismiss()
-                requestPermissionNow()
+            MODIFY_AUDIO_PERMISSION,
+            rationaleDelegate = dialogRationaleDelegate
+        ) { permissionResult: PermissionResult ->
+            when {
+                permissionResult.hasAllGranted() -> startWebRtcActivity(
+                    roomId = editRoomIdText.text.toString(),
+                    ipAddr = editIpText.text.toString()
+                )
+                permissionResult.hasPermanentDenied() -> onPermissionsDenied()
             }
-            .setNegativeButton("Deny") { dialog, _ ->
-                dialog.dismiss()
-                onPermissionsDenied()
-            }
-            .show()
-    }
-
-    private fun requestPermissionNow() {
-        requestPermissionsCompat(
-            arrayOf(
-                CAMERA_PERMISSION,
-                AUDIO_PERMISSION,
-                MODIFY_AUDIO_PERMISSION
-            ),
-            PERMISSION_REQUEST_CODE
-        )
+        }
     }
 
     private fun onPermissionsDenied() {
         Toast.makeText(this, "WebRTC Permissions Denied", Toast.LENGTH_LONG).show()
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.permissionsGranted()) {
-            startWebRtcActivity(
-                roomId = editRoomIdText.text.toString(),
-                ipAddr = editIpText.text.toString()
-            )
-        } else {
-            onPermissionsDenied()
-        }
     }
 }

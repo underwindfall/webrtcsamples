@@ -10,4 +10,7 @@
     <string name="remote_btn_un_mute_spear">UnMute Speaker</string>
     <string name="remote_btn_hangup">Hang Up</string>
     <string name="remote_btn_switch">switch</string>
+    <string name="permission_dialog_title">WebRtc Permissions Required</string>
+    <string name="permission_dialog_message">This app need WebRtc Permissions to work well</string>
+    <string name="permission_dialog_deny">Deny</string>
 </resources>
