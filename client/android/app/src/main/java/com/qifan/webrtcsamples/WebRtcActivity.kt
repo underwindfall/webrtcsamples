@@ -27,81 +27,81 @@ import com.qifan.webrtcsamples.databinding.ActivityWebRtcBinding
 import kotlin.properties.Delegates
 
 class WebRtcActivity : AppCompatActivity(), RTCManager.Listener {
-    private lateinit var webRtcBinding: ActivityWebRtcBinding
-    private val handUpBtn get() = webRtcBinding.btnHangUp
-    private val muteMicroBtn get() = webRtcBinding.btnMuteMicro
-    private val muteSpeakerBtn get() = webRtcBinding.btnMuteSpeaker
-    private val switchCameraBtn get() = webRtcBinding.btnSwitchCamera
-    private val localViewRender get() = webRtcBinding.rtcViewLocal
-    private val remoteViewRender get() = webRtcBinding.rtcViewRemote
-    private var rtcManager: RTCManager by Delegates.notNull()
-    private lateinit var roomId: String
-    private lateinit var ipAddr: String
+  private lateinit var webRtcBinding: ActivityWebRtcBinding
+  private val handUpBtn get() = webRtcBinding.btnHangUp
+  private val muteMicroBtn get() = webRtcBinding.btnMuteMicro
+  private val muteSpeakerBtn get() = webRtcBinding.btnMuteSpeaker
+  private val switchCameraBtn get() = webRtcBinding.btnSwitchCamera
+  private val localViewRender get() = webRtcBinding.rtcViewLocal
+  private val remoteViewRender get() = webRtcBinding.rtcViewRemote
+  private var rtcManager: RTCManager by Delegates.notNull()
+  private lateinit var roomId: String
+  private lateinit var ipAddr: String
 
-    companion object {
-        private const val ROOM = "ROOM"
-        private const val IPADDRESS = "IPADDRESS"
+  companion object {
+    private const val ROOM = "ROOM"
+    private const val IPADDRESS = "IPADDRESS"
 
-        @JvmStatic
-        fun Activity.startWebRtcActivity(roomId: String, ipAddr: String) {
-            startActivity(
-                Intent(this, WebRtcActivity::class.java)
-                    .putExtra(ROOM, roomId)
-                    .putExtra(IPADDRESS, ipAddr)
-            )
-        }
+    @JvmStatic
+    fun Activity.startWebRtcActivity(roomId: String, ipAddr: String) {
+      startActivity(
+        Intent(this, WebRtcActivity::class.java)
+          .putExtra(ROOM, roomId)
+          .putExtra(IPADDRESS, ipAddr)
+      )
     }
+  }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        webRtcBinding = ActivityWebRtcBinding.inflate(layoutInflater)
-        val view = webRtcBinding.root
-        setContentView(view)
-        rtcManager = RTCManager(applicationContext)
-        handUpBtn.setOnClickListener {
-            rtcManager.hangup()
-        }
-        muteMicroBtn.setOnClickListener {
-            rtcManager.changeMicro()
-        }
-        muteSpeakerBtn.setOnClickListener {
-            rtcManager.changeSpeaker()
-        }
-        switchCameraBtn.setOnClickListener {
-            rtcManager.switchCam()
-        }
-        parseIntents()
-        initializeWebRtc()
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    webRtcBinding = ActivityWebRtcBinding.inflate(layoutInflater)
+    val view = webRtcBinding.root
+    setContentView(view)
+    rtcManager = RTCManager(applicationContext)
+    handUpBtn.setOnClickListener {
+      rtcManager.hangup()
     }
+    muteMicroBtn.setOnClickListener {
+      rtcManager.changeMicro()
+    }
+    muteSpeakerBtn.setOnClickListener {
+      rtcManager.changeSpeaker()
+    }
+    switchCameraBtn.setOnClickListener {
+      rtcManager.switchCam()
+    }
+    parseIntents()
+    initializeWebRtc()
+  }
 
-    private fun parseIntents() {
-        val room = intent.getStringExtra(ROOM)
-        val ip = intent.getStringExtra(IPADDRESS)
-        require(room != null && ip != null) { "Must have essential parameter to initialize call" }
-        roomId = room
-        ipAddr = ip
-    }
+  private fun parseIntents() {
+    val room = intent.getStringExtra(ROOM)
+    val ip = intent.getStringExtra(IPADDRESS)
+    require(room != null && ip != null) { "Must have essential parameter to initialize call" }
+    roomId = room
+    ipAddr = ip
+  }
 
-    private fun initializeWebRtc() {
-        val callSource = CallSource(
-            activity = this,
-            identity = ipAddr,
-            roomId = roomId,
-            mediaViewRender = MediaViewRender(localViewRender, remoteViewRender),
-            rtcConstraints = RTCConstraints()
-        )
-        rtcManager.call(callSource, this)
-    }
+  private fun initializeWebRtc() {
+    val callSource = CallSource(
+      activity = this,
+      identity = ipAddr,
+      roomId = roomId,
+      mediaViewRender = MediaViewRender(localViewRender, remoteViewRender),
+      rtcConstraints = RTCConstraints()
+    )
+    rtcManager.call(callSource, this)
+  }
 
-    override fun cleanup() {
-        finish()
-    }
+  override fun cleanup() {
+    finish()
+  }
 
-    override fun onLocalAudioChange(enable: Boolean) {
-        muteMicroBtn.setText(if (enable) R.string.btn_un_mute_micro else R.string.btn_mute_micro)
-    }
+  override fun onLocalAudioChange(enable: Boolean) {
+    muteMicroBtn.setText(if (enable) R.string.btn_un_mute_micro else R.string.btn_mute_micro)
+  }
 
-    override fun onRemoteAudioChange(enable: Boolean) {
-        muteSpeakerBtn.setText(if (enable) R.string.remote_btn_un_mute_spear else R.string.remote_btn_mute_speaker)
-    }
+  override fun onRemoteAudioChange(enable: Boolean) {
+    muteSpeakerBtn.setText(if (enable) R.string.remote_btn_un_mute_spear else R.string.remote_btn_mute_speaker)
+  }
 }

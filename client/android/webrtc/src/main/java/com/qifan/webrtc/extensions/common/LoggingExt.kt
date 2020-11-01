@@ -24,13 +24,13 @@ import android.util.Log
  * @param args additional message
  */
 fun Any.debug(
-    message: String,
-    vararg args: Any?
+  message: String,
+  vararg args: Any?
 ) {
-    try {
-        Log.d(this::class.java.simpleName, message.format(*args))
-    } catch (_: Exception) {
-    }
+  try {
+    Log.d(this::class.java.simpleName, message.format(*args))
+  } catch (_: Exception) {
+  }
 }
 
 /**
@@ -40,13 +40,13 @@ fun Any.debug(
  * @param args additional message
  */
 fun Any.warn(
-    message: String,
-    vararg args: Any?
+  message: String,
+  vararg args: Any?
 ) {
-    try {
-        Log.w(this::class.java.simpleName, message.format(*args))
-    } catch (_: Exception) {
-    }
+  try {
+    Log.w(this::class.java.simpleName, message.format(*args))
+  } catch (_: Exception) {
+  }
 }
 
 /**
@@ -56,11 +56,11 @@ fun Any.warn(
  * @param args additional message
  */
 fun Any.error(
-    message: String,
-    vararg args: Any?
+  message: String,
+  vararg args: Any?
 ) {
-    try {
-        Log.e(this::class.java.simpleName, message.format(*args))
-    } catch (_: Exception) {
-    }
+  try {
+    Log.e(this::class.java.simpleName, message.format(*args))
+  } catch (_: Exception) {
+  }
 }

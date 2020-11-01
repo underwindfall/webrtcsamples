@@ -18,23 +18,23 @@ package com.qifan.webrtc.model
 import org.webrtc.MediaConstraints
 
 data class RTCConstraints(
-    val audio: MediaConstraints.KeyValuePair = MediaConstraints.KeyValuePair(
-        "OfferToReceiveAudio",
-        "true"
-    ),
-    val video: MediaConstraints.KeyValuePair = MediaConstraints.KeyValuePair(
-        "OfferToReceiveVideo",
-        "true"
-    )
+  val audio: MediaConstraints.KeyValuePair = MediaConstraints.KeyValuePair(
+    "OfferToReceiveAudio",
+    "true"
+  ),
+  val video: MediaConstraints.KeyValuePair = MediaConstraints.KeyValuePair(
+    "OfferToReceiveVideo",
+    "true"
+  )
 )
 
 internal fun RTCConstraints.toConstraints(): MediaConstraints {
-    return MediaConstraints().apply {
-        mandatory.add(audio)
-        mandatory.add(video)
-    }
+  return MediaConstraints().apply {
+    mandatory.add(audio)
+    mandatory.add(video)
+  }
 }
 
 internal fun MediaConstraints.addIceRestart(): MediaConstraints {
-    return apply { mandatory.add(MediaConstraints.KeyValuePair("IceRestart", "true")) }
+  return apply { mandatory.add(MediaConstraints.KeyValuePair("IceRestart", "true")) }
 }

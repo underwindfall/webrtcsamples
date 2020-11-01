@@ -25,20 +25,20 @@ import org.webrtc.CameraVideoCapturer
  * Function to get a VideoCapture Interface from WebRTC SDK to get front camera video
  */
 fun Context.buildVideoCapturer(): CameraVideoCapturer {
-    val canUseCamera2 = Camera2Enumerator.isSupported(this)
-    return if (canUseCamera2) {
-        createCameraCapturer(
-            Camera2Enumerator(
-                this
-            )
-        )
-    } else {
-        createCameraCapturer(
-            Camera1Enumerator(
-                true
-            )
-        )
-    }
+  val canUseCamera2 = Camera2Enumerator.isSupported(this)
+  return if (canUseCamera2) {
+    createCameraCapturer(
+      Camera2Enumerator(
+        this
+      )
+    )
+  } else {
+    createCameraCapturer(
+      Camera1Enumerator(
+        true
+      )
+    )
+  }
 }
 
 /**
@@ -47,17 +47,17 @@ fun Context.buildVideoCapturer(): CameraVideoCapturer {
  * @param enumerator
  */
 private fun createCameraCapturer(enumerator: CameraEnumerator): CameraVideoCapturer {
-    return enumerator.run {
-        // find front camera
-        deviceNames.find { name -> isFrontFacing(name) }
-            ?.let {
-                createCapturer(it, null)
-            }
-            // if can't find any use others
-            ?: deviceNames.find { name -> !isFrontFacing(name) }
-                ?.let {
-                    createCapturer(it, null)
-                }
-            ?: throw IllegalStateException("Couldn't find available camera")
-    }
+  return enumerator.run {
+    // find front camera
+    deviceNames.find { name -> isFrontFacing(name) }
+      ?.let {
+        createCapturer(it, null)
+      }
+      // if can't find any use others
+      ?: deviceNames.find { name -> !isFrontFacing(name) }
+        ?.let {
+          createCapturer(it, null)
+        }
+      ?: throw IllegalStateException("Couldn't find available camera")
+  }
 }

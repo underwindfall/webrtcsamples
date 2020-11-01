@@ -18,18 +18,18 @@ package com.qifan.webrtc
 import org.webrtc.SessionDescription
 
 sealed class RTCEvent {
-    object Idle : RTCEvent()
-    object Connecting : RTCEvent()
+  object Idle : RTCEvent()
+  object Connecting : RTCEvent()
 
-    sealed class ParticipantEvent : RTCEvent() {
-        object CreateOffer : ParticipantEvent()
-        data class SetLocalSdp(val sdp: SessionDescription?) : ParticipantEvent()
-        data class SendOfferToParticipant(val sdp: SessionDescription?) : ParticipantEvent()
-        data class SetRemoteSdp(val sdp: SessionDescription?) : ParticipantEvent()
-        data class SendAnswer(val sdp: SessionDescription?) : ParticipantEvent()
-    }
+  sealed class ParticipantEvent : RTCEvent() {
+    object CreateOffer : ParticipantEvent()
+    data class SetLocalSdp(val sdp: SessionDescription?) : ParticipantEvent()
+    data class SendOfferToParticipant(val sdp: SessionDescription?) : ParticipantEvent()
+    data class SetRemoteSdp(val sdp: SessionDescription?) : ParticipantEvent()
+    data class SendAnswer(val sdp: SessionDescription?) : ParticipantEvent()
+  }
 
-    override fun toString(): String {
-        return this.javaClass.simpleName
-    }
+  override fun toString(): String {
+    return this.javaClass.simpleName
+  }
 }

@@ -32,57 +32,58 @@ import com.qifan.webrtcsamples.WebRtcActivity.Companion.startWebRtcActivity
 import com.qifan.webrtcsamples.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityMainBinding
-    private val editRoomIdText get() = binding.editRoomId
-    private val editIpText get() = binding.editIpAddr
-    private val dialogRationaleDelegate: RationaleDelegate by lazy {
-        createDialogRationale(
-            dialogTitle = R.string.permission_dialog_title,
-            requiredPermissions = listOf(
-                CAMERA_PERMISSION,
-                AUDIO_PERMISSION,
-                MODIFY_AUDIO_PERMISSION
-            ),
-            message = getString(R.string.permission_dialog_message),
-            negativeText = getString(R.string.permission_dialog_deny)
+  private lateinit var binding: ActivityMainBinding
+  private val editRoomIdText get() = binding.editRoomId
+  private val editIpText get() = binding.editIpAddr
+  private val dialogRationaleDelegate: RationaleDelegate by lazy {
+    createDialogRationale(
+      dialogTitle = R.string.permission_dialog_title,
+      requiredPermissions = listOf(
+        CAMERA_PERMISSION,
+        AUDIO_PERMISSION,
+        MODIFY_AUDIO_PERMISSION
+      ),
+      message = getString(R.string.permission_dialog_message),
+      negativeText = getString(R.string.permission_dialog_deny)
+    )
+  }
+
+  @SuppressLint("SetTextI18n")
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    binding = ActivityMainBinding.inflate(layoutInflater)
+    val view = binding.root
+    setContentView(view)
+    // bedefault I use url because I upload this to the server
+    editIpText.setText("https://shielded-scrubland-97607.herokuapp.com")
+    editRoomIdText.setText("Room1")
+    binding.btnConfirm.setOnClickListener {
+      if (!editRoomIdText.text.isNullOrEmpty() && !editIpText.text.isNullOrEmpty()) {
+        checkPermissions()
+      } else {
+        Toast.makeText(this, R.string.input_parameter_warning, Toast.LENGTH_LONG).show()
+      }
+    }
+  }
+
+  private fun checkPermissions() {
+    askPermissions(
+      CAMERA_PERMISSION,
+      AUDIO_PERMISSION,
+      MODIFY_AUDIO_PERMISSION,
+      rationaleDelegate = dialogRationaleDelegate
+    ) { permissionResult: PermissionResult ->
+      when {
+        permissionResult.hasAllGranted() -> startWebRtcActivity(
+          roomId = editRoomIdText.text.toString(),
+          ipAddr = editIpText.text.toString()
         )
+        permissionResult.hasPermanentDenied() -> onPermissionsDenied()
+      }
     }
+  }
 
-    @SuppressLint("SetTextI18n")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        val view = binding.root
-        setContentView(view)
-        editIpText.setText("http://192.168.1.29:8080")
-        editRoomIdText.setText("Room1")
-        binding.btnConfirm.setOnClickListener {
-            if (!editRoomIdText.text.isNullOrEmpty() && !editIpText.text.isNullOrEmpty()) {
-                checkPermissions()
-            } else {
-                Toast.makeText(this, R.string.input_parameter_warning, Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-    private fun checkPermissions() {
-        askPermissions(
-            CAMERA_PERMISSION,
-            AUDIO_PERMISSION,
-            MODIFY_AUDIO_PERMISSION,
-            rationaleDelegate = dialogRationaleDelegate
-        ) { permissionResult: PermissionResult ->
-            when {
-                permissionResult.hasAllGranted() -> startWebRtcActivity(
-                    roomId = editRoomIdText.text.toString(),
-                    ipAddr = editIpText.text.toString()
-                )
-                permissionResult.hasPermanentDenied() -> onPermissionsDenied()
-            }
-        }
-    }
-
-    private fun onPermissionsDenied() {
-        Toast.makeText(this, "WebRTC Permissions Denied", Toast.LENGTH_LONG).show()
-    }
+  private fun onPermissionsDenied() {
+    Toast.makeText(this, "WebRTC Permissions Denied", Toast.LENGTH_LONG).show()
+  }
 }

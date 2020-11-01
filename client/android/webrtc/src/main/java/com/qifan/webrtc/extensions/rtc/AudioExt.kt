@@ -35,20 +35,20 @@ private const val AUDIO_LEVEL_CONTROL_CONSTRAINT = "levelControl"
  * @param constraints of audio source
  */
 fun createAudioSource(
-    peerConnectionFactory: PeerConnectionFactory,
-    constraints: MediaConstraints = buildMediaConstraints()
+  peerConnectionFactory: PeerConnectionFactory,
+  constraints: MediaConstraints = buildMediaConstraints()
 ): AudioSource {
-    return peerConnectionFactory.createAudioSource(constraints)
+  return peerConnectionFactory.createAudioSource(constraints)
 }
 
 private fun buildMediaConstraints(): MediaConstraints {
-    return MediaConstraints().apply {
-        mandatory.add(MediaConstraints.KeyValuePair(AUDIO_ECHO_CANCELLATION_CONSTRAINT, "true"))
-        mandatory.add(MediaConstraints.KeyValuePair(AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT, "true"))
-        mandatory.add(MediaConstraints.KeyValuePair(AUDIO_HIGH_PASS_FILTER_CONSTRAINT, "true"))
-        mandatory.add(MediaConstraints.KeyValuePair(AUDIO_NOISE_SUPPRESSION_CONSTRAINT, "true"))
-        mandatory.add(MediaConstraints.KeyValuePair(AUDIO_LEVEL_CONTROL_CONSTRAINT, "true"))
-    }
+  return MediaConstraints().apply {
+    mandatory.add(MediaConstraints.KeyValuePair(AUDIO_ECHO_CANCELLATION_CONSTRAINT, "true"))
+    mandatory.add(MediaConstraints.KeyValuePair(AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT, "true"))
+    mandatory.add(MediaConstraints.KeyValuePair(AUDIO_HIGH_PASS_FILTER_CONSTRAINT, "true"))
+    mandatory.add(MediaConstraints.KeyValuePair(AUDIO_NOISE_SUPPRESSION_CONSTRAINT, "true"))
+    mandatory.add(MediaConstraints.KeyValuePair(AUDIO_LEVEL_CONTROL_CONSTRAINT, "true"))
+  }
 }
 
 /**
@@ -57,11 +57,11 @@ private fun buildMediaConstraints(): MediaConstraints {
  * @param audioSource source of audio
  */
 fun createAudioTrack(
-    peerConnectionFactory: PeerConnectionFactory,
-    id: String = LOCAL_AUDIO_TRACK_ID,
-    audioSource: AudioSource
+  peerConnectionFactory: PeerConnectionFactory,
+  id: String = LOCAL_AUDIO_TRACK_ID,
+  audioSource: AudioSource
 ): AudioTrack {
-    return peerConnectionFactory.createAudioTrack(id, audioSource)
+  return peerConnectionFactory.createAudioTrack(id, audioSource)
 }
 
 /**
@@ -71,44 +71,44 @@ fun createAudioTrack(
  * @return well configured audio device
  */
 fun createJavaAudioDevice(context: Context): AudioDeviceModule {
-    // Set audio record error callbacks
-    val audioRecordErrorCallback = object : JavaAudioDeviceModule.AudioRecordErrorCallback {
-        override fun onWebRtcAudioRecordInitError(p0: String?) {
-            error(message = "onWebRtcAudioRecordInitError $p0")
-        }
-
-        override fun onWebRtcAudioRecordError(p0: String?) {
-            error(message = "onWebRtcAudioRecordError $p0")
-        }
-
-        override fun onWebRtcAudioRecordStartError(
-            p0: JavaAudioDeviceModule.AudioRecordStartErrorCode?,
-            p1: String?
-        ) {
-            error(message = "onWebRtcAudioRecordStartError code => $p0  message=> $p1 ")
-        }
+  // Set audio record error callbacks
+  val audioRecordErrorCallback = object : JavaAudioDeviceModule.AudioRecordErrorCallback {
+    override fun onWebRtcAudioRecordInitError(p0: String?) {
+      error(message = "onWebRtcAudioRecordInitError $p0")
     }
-    // Set audio track error callbacks
-    val audioTrackErrorCallback = object : JavaAudioDeviceModule.AudioTrackErrorCallback {
-        override fun onWebRtcAudioTrackError(p0: String?) {
-            error(message = "onWebRtcAudioTrackError $p0")
-        }
 
-        override fun onWebRtcAudioTrackStartError(
-            p0: JavaAudioDeviceModule.AudioTrackStartErrorCode?,
-            p1: String?
-        ) {
-            error(message = "onWebRtcAudioTrackStartError code => $p0 message=> $p1")
-        }
-
-        override fun onWebRtcAudioTrackInitError(p0: String?) {
-            error(message = "onWebRtcAudioTrackInitError  $p0")
-        }
+    override fun onWebRtcAudioRecordError(p0: String?) {
+      error(message = "onWebRtcAudioRecordError $p0")
     }
-    return JavaAudioDeviceModule.builder(context)
-        .setUseHardwareAcousticEchoCanceler(true)
-        .setUseHardwareNoiseSuppressor(true)
-        .setAudioRecordErrorCallback(audioRecordErrorCallback)
-        .setAudioTrackErrorCallback(audioTrackErrorCallback)
-        .createAudioDeviceModule()
+
+    override fun onWebRtcAudioRecordStartError(
+      p0: JavaAudioDeviceModule.AudioRecordStartErrorCode?,
+      p1: String?
+    ) {
+      error(message = "onWebRtcAudioRecordStartError code => $p0  message=> $p1 ")
+    }
+  }
+  // Set audio track error callbacks
+  val audioTrackErrorCallback = object : JavaAudioDeviceModule.AudioTrackErrorCallback {
+    override fun onWebRtcAudioTrackError(p0: String?) {
+      error(message = "onWebRtcAudioTrackError $p0")
+    }
+
+    override fun onWebRtcAudioTrackStartError(
+      p0: JavaAudioDeviceModule.AudioTrackStartErrorCode?,
+      p1: String?
+    ) {
+      error(message = "onWebRtcAudioTrackStartError code => $p0 message=> $p1")
+    }
+
+    override fun onWebRtcAudioTrackInitError(p0: String?) {
+      error(message = "onWebRtcAudioTrackInitError  $p0")
+    }
+  }
+  return JavaAudioDeviceModule.builder(context)
+    .setUseHardwareAcousticEchoCanceler(true)
+    .setUseHardwareNoiseSuppressor(true)
+    .setAudioRecordErrorCallback(audioRecordErrorCallback)
+    .setAudioTrackErrorCallback(audioTrackErrorCallback)
+    .createAudioDeviceModule()
 }

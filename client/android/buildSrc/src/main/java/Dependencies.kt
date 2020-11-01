@@ -1,14 +1,14 @@
 object Versions {
-    const val android_plugin = "4.0.1"
-    const val kotlin = "1.4.0"
+    const val android_plugin = "4.1.0"
+    const val kotlin = "1.4.10"
     const val appcompat = "1.1.0"
     const val core = "1.3.0"
 }
 
 object BuildVersions {
-    const val compileSdkVersion = 29
+    const val compileSdkVersion = 30
     const val minSdkVersion = 21
-    const val targetSdkVersion = 29
+    const val targetSdkVersion = 30
     const val versionCode = 1
     const val versionName = "0.0.1"
 }
@@ -16,7 +16,7 @@ object BuildVersions {
 object BuildPlugins {
     const val androidGradle = "com.android.tools.build:gradle:${Versions.android_plugin}"
     const val kotlinGradle = "org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}"
-    const val spotlessGradle = "com.diffplug.spotless:spotless-plugin-gradle:4.3.1"
+    const val spotlessGradle = "com.diffplug.spotless:spotless-plugin-gradle:5.7.0"
 }
 
 

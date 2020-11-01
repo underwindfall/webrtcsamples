@@ -18,9 +18,9 @@ package com.qifan.webrtc.model
 import android.app.Activity
 
 data class CallSource(
-    val activity: Activity,
-    val identity: String,
-    val roomId: String,
-    val mediaViewRender: MediaViewRender,
-    val rtcConstraints: RTCConstraints
+  val activity: Activity,
+  val identity: String,
+  val roomId: String,
+  val mediaViewRender: MediaViewRender,
+  val rtcConstraints: RTCConstraints
 )

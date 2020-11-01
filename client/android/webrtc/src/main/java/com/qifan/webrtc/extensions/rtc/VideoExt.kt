@@ -24,19 +24,19 @@ import org.webrtc.VideoTrack
  * create video source
  */
 fun createVideoSource(
-    peerConnectionFactory: PeerConnectionFactory,
-    isScreenCast: Boolean
+  peerConnectionFactory: PeerConnectionFactory,
+  isScreenCast: Boolean
 ): VideoSource {
-    return peerConnectionFactory.createVideoSource(isScreenCast)
+  return peerConnectionFactory.createVideoSource(isScreenCast)
 }
 
 /**
  * attach video source to video track
  */
 fun createVideoTrack(
-    peerConnectionFactory: PeerConnectionFactory,
-    id: String = LOCAL_VIDEO_TRACK_ID,
-    videoSource: VideoSource
+  peerConnectionFactory: PeerConnectionFactory,
+  id: String = LOCAL_VIDEO_TRACK_ID,
+  videoSource: VideoSource
 ): VideoTrack {
-    return peerConnectionFactory.createVideoTrack(id, videoSource)
+  return peerConnectionFactory.createVideoTrack(id, videoSource)
 }

@@ -26,10 +26,10 @@ typealias OptionConfigure = () -> Unit
  * create surface texture to attach video capturer with it
  */
 fun createSurfaceTexture(
-    threadName: String = Thread.currentThread().name,
-    sharedContext: EglBase.Context
+  threadName: String = Thread.currentThread().name,
+  sharedContext: EglBase.Context
 ): SurfaceTextureHelper {
-    return SurfaceTextureHelper.create(threadName, sharedContext)
+  return SurfaceTextureHelper.create(threadName, sharedContext)
 }
 
 /**
@@ -39,13 +39,13 @@ fun createSurfaceTexture(
  * @param optionalConfigurations optional configuration calling functions
  */
 fun SurfaceViewRenderer.initializeSurfaceView(
-    rootEglBase: EglBase,
-    optionalConfigurations: OptionConfigure? = null
+  rootEglBase: EglBase,
+  optionalConfigurations: OptionConfigure? = null
 ) = apply {
-    setMirror(true)
-    setEnableHardwareScaler(true)
-    setZOrderMediaOverlay(true)
-    setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
-    init(rootEglBase.eglBaseContext, null)
-    optionalConfigurations?.invoke()
+  setMirror(true)
+  setEnableHardwareScaler(true)
+  setZOrderMediaOverlay(true)
+  setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
+  init(rootEglBase.eglBaseContext, null)
+  optionalConfigurations?.invoke()
 }

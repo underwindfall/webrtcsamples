@@ -37,122 +37,122 @@ private const val TYPE_SEND_ANSWER = "send_answer"
 private const val TYPE_SEND_CANDIDATE = "send_candidate"
 
 internal class SignalingSocketIOClient(private val enableLogging: Boolean = false) {
-    private var socket: Socket by notNull()
-    private var listener: Listener? = null
+  private var socket: Socket by notNull()
+  private var listener: Listener? = null
 
-    internal fun connect(identity: String, roomName: String, listener: Listener) {
-        try {
-            this.listener = listener
-            socket = IO.socket(identity)
-            attachSocketListeners(roomName)
-            socket.connect()
-        } catch (e: URISyntaxException) {
-            e.printStackTrace()
+  internal fun connect(identity: String, roomName: String, listener: Listener) {
+    try {
+      this.listener = listener
+      socket = IO.socket(identity)
+      attachSocketListeners(roomName)
+      socket.connect()
+    } catch (e: URISyntaxException) {
+      e.printStackTrace()
+    }
+  }
+
+  private fun attachSocketListeners(roomName: String) {
+    socket
+      .on(Socket.EVENT_CONNECT) {
+        socket.emit("create or join", roomName)
+      }
+      .on(EVENT_CREATED) {
+        listener?.onRoomCreated()
+      }
+      .on(EVENT_JOIN) {
+        listener?.onParticipantConnected()
+      }
+      .on(EVENT_MESSAGE) { args ->
+        val message = args.firstOrNull() as JSONObject
+        when (message.getString("type")) {
+          TYPE_SEND_OFFER -> {
+            listener?.onParticipantReceiveOffer(
+              SessionDescription(
+                SessionDescription.Type.OFFER,
+                message.getString("sdp")
+              )
+            )
+          }
+          TYPE_SEND_ANSWER -> {
+            listener?.onRoomReceiveAnswer(
+              SessionDescription(
+                SessionDescription.Type.ANSWER,
+                message.getString("sdp")
+              )
+            )
+          }
+          TYPE_SEND_CANDIDATE -> {
+            listener?.onExchangeCandidate(
+              IceCandidate(
+                message.getString("id"),
+                message.getInt("label"),
+                message.getString("candidate")
+              )
+            )
+          }
         }
-    }
-
-    private fun attachSocketListeners(roomName: String) {
-        socket
-            .on(Socket.EVENT_CONNECT) {
-                socket.emit("create or join", roomName)
-            }
-            .on(EVENT_CREATED) {
-                listener?.onRoomCreated()
-            }
-            .on(EVENT_JOIN) {
-                listener?.onParticipantConnected()
-            }
-            .on(EVENT_MESSAGE) { args ->
-                val message = args.firstOrNull() as JSONObject
-                when (message.getString("type")) {
-                    TYPE_SEND_OFFER -> {
-                        listener?.onParticipantReceiveOffer(
-                            SessionDescription(
-                                SessionDescription.Type.OFFER,
-                                message.getString("sdp")
-                            )
-                        )
-                    }
-                    TYPE_SEND_ANSWER -> {
-                        listener?.onRoomReceiveAnswer(
-                            SessionDescription(
-                                SessionDescription.Type.ANSWER,
-                                message.getString("sdp")
-                            )
-                        )
-                    }
-                    TYPE_SEND_CANDIDATE -> {
-                        listener?.onExchangeCandidate(
-                            IceCandidate(
-                                message.getString("id"),
-                                message.getInt("label"),
-                                message.getString("candidate")
-                            )
-                        )
-                    }
-                }
-            }
-            .on(EVENT_CLOSE) {
-                listener?.onClose()
-            }
-            .on(EVENT_LOG) { args ->
-                if (enableLogging) {
-                    args.forEach { debug("Socket client server observe $it") }
-                }
-            }
-            .on(Socket.EVENT_DISCONNECT) {
-                debug("Signal socket disconnect")
-            }
-    }
-
-    internal fun sendOffer(sdp: SessionDescription?) {
-        with(JSONObject()) {
-            put("type", TYPE_SEND_OFFER)
-            put("sdp", sdp?.description)
-            sendMessage(this)
+      }
+      .on(EVENT_CLOSE) {
+        listener?.onClose()
+      }
+      .on(EVENT_LOG) { args ->
+        if (enableLogging) {
+          args.forEach { debug("Socket client server observe $it") }
         }
-    }
+      }
+      .on(Socket.EVENT_DISCONNECT) {
+        debug("Signal socket disconnect")
+      }
+  }
 
-    internal fun sendAnswer(sdp: SessionDescription?) {
-        with(JSONObject()) {
-            put("type", TYPE_SEND_ANSWER)
-            put("sdp", sdp?.description)
-        }.apply {
-            sendMessage(this)
-        }
+  internal fun sendOffer(sdp: SessionDescription?) {
+    with(JSONObject()) {
+      put("type", TYPE_SEND_OFFER)
+      put("sdp", sdp?.description)
+      sendMessage(this)
     }
+  }
 
-    internal fun sendIceCandidate(iceCandidate: IceCandidate) {
-        with(JSONObject()) {
-            put("type", TYPE_SEND_CANDIDATE)
-            put("label", iceCandidate.sdpMLineIndex)
-            put("id", iceCandidate.sdpMid)
-            put("candidate", iceCandidate.sdp)
-        }.apply {
-            debug("onIceCandidate: sending candidate $this")
-            sendMessage(this)
-        }
+  internal fun sendAnswer(sdp: SessionDescription?) {
+    with(JSONObject()) {
+      put("type", TYPE_SEND_ANSWER)
+      put("sdp", sdp?.description)
+    }.apply {
+      sendMessage(this)
     }
+  }
 
-    internal fun disconnect() {
-        socket.emit("leave")
-        socket.off()
-        socket.disconnect()
+  internal fun sendIceCandidate(iceCandidate: IceCandidate) {
+    with(JSONObject()) {
+      put("type", TYPE_SEND_CANDIDATE)
+      put("label", iceCandidate.sdpMLineIndex)
+      put("id", iceCandidate.sdpMid)
+      put("candidate", iceCandidate.sdp)
+    }.apply {
+      debug("onIceCandidate: sending candidate $this")
+      sendMessage(this)
     }
+  }
 
-    /**
-     * benefit of socket io to deal with socket
-     */
-    private fun sendMessage(message: Any) {
-        socket.emit("message", message)
-    }
+  internal fun disconnect() {
+    socket.emit("leave")
+    socket.off()
+    socket.disconnect()
+  }
 
-    internal interface Listener {
-        fun onRoomCreated()
-        fun onParticipantConnected()
-        fun onParticipantReceiveOffer(sdp: SessionDescription)
-        fun onRoomReceiveAnswer(sdp: SessionDescription)
-        fun onExchangeCandidate(iceCandidate: IceCandidate)
-        fun onClose()
-    }
+  /**
+   * benefit of socket io to deal with socket
+   */
+  private fun sendMessage(message: Any) {
+    socket.emit("message", message)
+  }
+
+  internal interface Listener {
+    fun onRoomCreated()
+    fun onParticipantConnected()
+    fun onParticipantReceiveOffer(sdp: SessionDescription)
+    fun onRoomReceiveAnswer(sdp: SessionDescription)
+    fun onExchangeCandidate(iceCandidate: IceCandidate)
+    fun onClose()
+  }
 }

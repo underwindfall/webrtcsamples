@@ -25,21 +25,21 @@ private val executor: ExecutorService by lazy { Executors.newSingleThreadExecuto
 private val handler: Handler = Handler(Looper.getMainLooper())
 
 fun async(action: () -> Unit) {
-    executor.execute { action() }
+  executor.execute { action() }
 }
 
 fun ui(action: () -> Unit) {
-    if (isUIThread()) {
-        action()
-    } else {
-        handler.post { action() }
-    }
+  if (isUIThread()) {
+    action()
+  } else {
+    handler.post { action() }
+  }
 }
 
 fun isUIThread(): Boolean {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        Looper.getMainLooper().isCurrentThread
-    } else {
-        Thread.currentThread() == Looper.getMainLooper().thread
-    }
+  return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    Looper.getMainLooper().isCurrentThread
+  } else {
+    Thread.currentThread() == Looper.getMainLooper().thread
+  }
 }

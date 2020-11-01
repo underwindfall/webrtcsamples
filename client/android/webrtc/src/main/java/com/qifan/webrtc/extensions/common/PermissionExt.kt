@@ -29,22 +29,22 @@ const val MODIFY_AUDIO_PERMISSION = Manifest.permission.MODIFY_AUDIO_SETTINGS
 const val PERMISSION_REQUEST_CODE = 0
 
 fun AppCompatActivity.checkSelfPermissionCompat(vararg permissions: Permission) =
-    permissions.map { permission -> ActivityCompat.checkSelfPermission(this, permission) }
+  permissions.map { permission -> ActivityCompat.checkSelfPermission(this, permission) }
 
 fun AppCompatActivity.shouldShowRequestPermissionRationaleCompat(vararg permissions: Permission) =
-    permissions.all { permission ->
-        ActivityCompat.shouldShowRequestPermissionRationale(this, permission)
-    }
+  permissions.all { permission ->
+    ActivityCompat.shouldShowRequestPermissionRationale(this, permission)
+  }
 
 fun AppCompatActivity.requestPermissionsCompat(
-    permissionsArray: Array<Permission>,
-    @IntRange(from = 0) requestCode: Int
+  permissionsArray: Array<Permission>,
+  @IntRange(from = 0) requestCode: Int
 ) {
-    ActivityCompat.requestPermissions(this, permissionsArray, requestCode)
+  ActivityCompat.requestPermissions(this, permissionsArray, requestCode)
 }
 
 fun AppCompatActivity.permissionGranted(vararg permissions: Permission): Boolean {
-    return checkSelfPermissionCompat(*permissions).all { it == PackageManager.PERMISSION_GRANTED }
+  return checkSelfPermissionCompat(*permissions).all { it == PackageManager.PERMISSION_GRANTED }
 }
 
 fun IntArray.permissionsGranted(): Boolean = all { it == PackageManager.PERMISSION_GRANTED }

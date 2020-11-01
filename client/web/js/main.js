@@ -28,7 +28,7 @@ var sdpConstraints = {
 /////////////////////////////////////////////
 
 var room = prompt('Enter room name:');
-var server = io("http://192.168.1.29:8080")
+var server = io("https://shielded-scrubland-97607.herokuapp.com")
 var socket = server.connect();
 
 if (room !== '') {
