@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
     binding = ActivityMainBinding.inflate(layoutInflater)
     val view = binding.root
     setContentView(view)
-    // bedefault I use url because I upload this to the server
+    // by default I use url because I upload this to the server
     editIpText.setText("https://shielded-scrubland-97607.herokuapp.com")
     editRoomIdText.setText("Room1")
     binding.btnConfirm.setOnClickListener {
