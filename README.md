@@ -27,3 +27,7 @@ npm run start
 - Web (done)
 - Android (done)
 - iOS (WIP)
+
+### CHANGELOG
+see more [CHANGELOG](./CHANGELOG.md)
+- Find a default free heroku server to use as remote testing
